@@ -37,22 +37,17 @@ export default function MainLayout({ children }) {
         <nav className="flex-1 space-y-2">
           <SidebarItem
             icon={Cuboid}
-            label="Visualizador 3D"
+            label="Inicio"
             to="/"
             active={location.pathname === '/'}
           />
           <SidebarItem
             icon={LayoutDashboard}
-            label="Dashboard"
-            to="/dashboard"
-            active={location.pathname === '/dashboard'}
+            label="Segmentacion"
+            to="/segmentacion"
+            active={location.pathname === '/segmentacion'}
           />
-          <SidebarItem
-            icon={Layers}
-            label="Segmentaciones"
-            to="/layers"
-            active={location.pathname === '/layers'}
-          />
+
         </nav>
 
         <div className="mt-auto pt-4 border-t border-white/10">
@@ -65,9 +60,9 @@ export default function MainLayout({ children }) {
         </div>
       </aside>
 
-      {/* Main Content */}
+
       <main className="flex-1 p-4 pl-0 h-screen overflow-hidden">
-        <div className="h-full w-full rounded-3xl overflow-hidden glass-panel relative">
+        <div className="h-full w-full rounded-3xl overflow-y-auto glass-panel relative">
           {children}
         </div>
       </main>
