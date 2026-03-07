@@ -55,7 +55,7 @@ class ImageUploadView(APIView):
                 #diltacion final
                 DIL2 = cv2.dilate(P.astype("uint8"),kernel)
                 #imagen con mascara
-                img_masked = cv2.bitwise_and(img,img,mask=DIL2)
+                img_masked = cv2.bitwise_and(img_gray,img_gray,mask=DIL2)
 
                 # Convierte a base64 y formato data URI para fácil uso en frontend
                 b64_orig = self.convert_base64_to_image(img)
