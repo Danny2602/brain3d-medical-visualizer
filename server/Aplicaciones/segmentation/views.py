@@ -17,12 +17,24 @@ class ImageUploadView(APIView):
         try:
             if image:
                 file_bytes = np.frombuffer(image.read(), np.uint8)
-                img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR) #Imagen en RGB original
+                img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR) #Imagen en RGB original 
                 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #Imagen en escala de grises
                 FIL = cv2.GaussianBlur(img_gray, (5, 5), 0) #Imagen en escala de grises con blur
                 img_cany = cv2.Canny(FIL, 10, 50) #Imagen con bordes detectados
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(4,4))#Kernel para dilatacion
                 DIL = cv2.dilate(img_cany,kernel,iterations=2)#Imagen dilatada
+
+                #Fourier Transform
+                # Aplicar FFT 2D
+                f = np.fft.fft2(img_gray)
+
+                # Mover frecuencias bajas al centro
+                fshift = np.fft.fftshift(f)
+
+                # Magnitud para visualizar
+                magnitude = 20 * np.log(np.abs(fshift) + 1)
+
+
 
                 #Relleno de hueco
                 h, w = DIL.shape #Obtener alto y ancho de la imagen
@@ -56,6 +68,7 @@ class ImageUploadView(APIView):
                 b64_p = self.convert_base64_to_image(P)
                 b64_dil2 = self.convert_base64_to_image(DIL2)
                 b64_masked = self.convert_base64_to_image(img_masked)
+                b64_Fourier = self.convert_base64_to_image(magnitude)
 
                 # Formato data URI para fácil uso en frontend
                 data = [
@@ -69,6 +82,7 @@ class ImageUploadView(APIView):
                     {'result':'Eliminado pequeños objetos','url': f'data:image/png;base64,{b64_p}'},
                     {'result':'dilated final','url': f'data:image/png;base64,{b64_dil2}'},
                     {'result':'masked','url': f'data:image/png;base64,{b64_masked}'},
+                    {'result':'Fourier Transform','url': f'data:image/png;base64,{b64_Fourier}'},
                 ]
                 return Response(data, status=status.HTTP_200_OK)
             else:
@@ -76,7 +90,7 @@ class ImageUploadView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-    def convert_base64_to_image(self, img):
+    def convert_base64_to_image(self, img): # Convierte a base64 y formato data URI para fácil uso en frontend
         import base64
         _, buffer_orig = cv2.imencode('.png', img)
         img_base64 = base64.b64encode(buffer_orig).decode('utf-8')
