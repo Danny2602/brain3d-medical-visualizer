@@ -18,13 +18,39 @@ class ImageUploadView(APIView):
             if image:
                 file_bytes = np.frombuffer(image.read(), np.uint8)
                 img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR) #Imagen en RGB original 
+                img = cv2.convertScaleAbs(img, alpha=1.5, beta=0)
                 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #Imagen en escala de grises
                 FIL = cv2.GaussianBlur(img_gray, (5, 5), 0) #Imagen en escala de grises con blur
-                img_cany = cv2.Canny(FIL, 10, 50) #Imagen con bordes detectados
+                #Metodo Otsu sirve para detectar bordes
+                _,img_otsu = cv2.threshold(FIL, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                
+                img_cany = cv2.Canny(FIL, 20, 60) #Imagen con bordes detectados
+                # bordes refinados para la mascara metodo 1
+                refined = cv2.bitwise_and(img_otsu, img_cany)
 
-
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2))#Kernel para dilatacion
+                # bordes refinados para la mascara metodo 2
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(4,4))#Kernel para dilatacion
                 DIL = cv2.dilate(img_cany,kernel,iterations=2)#Imagen dilatada
+                method2 = cv2.bitwise_or(img_otsu, DIL)
+                
+                
+                # bordes refinados para la mascara metodo 3
+                contours,_ = cv2.findContours(#Obtener contornos
+                    img_otsu,
+                    cv2.RETR_EXTERNAL,
+                    cv2.CHAIN_APPROX_SIMPLE
+                )
+
+                method3 = np.zeros_like(img_gray)
+                method3=cv2.bitwise_or(img_otsu, method3)
+
+                cv2.drawContours(
+                    method3,
+                    contours,
+                    -1,
+                    255,
+                    thickness=cv2.FILLED
+                )
 
                 #Fourier Transform
                 # Aplicar FFT 2D
@@ -36,15 +62,15 @@ class ImageUploadView(APIView):
                 # Magnitud para visualizar
                 magnitude = 20 * np.log(np.abs(fshift) + 1)
 
-
+                method=method2
 
                 #Relleno de hueco
-                h, w = DIL.shape #Obtener alto y ancho de la imagen
+                h, w = method.shape #Obtener alto y ancho de la imagen
                 mask = np.zeros((h+2, w+2), np.uint8) #Crear mascara para floodFill (debe ser 2 pixeles mas grande que la imagen)
-                filled = DIL.copy()#Crear copia de la imagen
+                filled = method.copy()#Crear copia de la imagen
                 cv2.floodFill(filled, mask, (0,0), 255)#Rellenar la mascara con el color 255 (blanco)
                 filled_inv = cv2.bitwise_not(filled)#Invertir la imagen rellenada para obtener solo los objetos rellenos
-                rellenada = cv2.bitwise_or(DIL, filled_inv)#Combinar la imagen dilatada con la imagen invertida para obtener la imagen con los objetos rellenos
+                rellenada = cv2.bitwise_or(method, filled_inv)#Combinar la imagen dilatada con la imagen invertida para obtener la imagen con los objetos rellenos
 
                 #erosion
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))#Kernel para erosion
@@ -59,13 +85,17 @@ class ImageUploadView(APIView):
                 DIL2 = cv2.dilate(P.astype("uint8"),kernel)
                 #imagen con mascara
                 img_masked = cv2.bitwise_and(img_gray,img_gray,mask=DIL2)
-
+                
                 # Convierte a base64 y formato data URI para fácil uso en frontend
                 b64_orig = self.convert_base64_to_image(img)
                 b64_gray = self.convert_base64_to_image(img_gray)
                 b64_blur = self.convert_base64_to_image(FIL)
                 b64_cany = self.convert_base64_to_image(img_cany)
+                b64_ost = self.convert_base64_to_image(img_otsu)
                 b64_dil = self.convert_base64_to_image(DIL)
+                b64_method1 = self.convert_base64_to_image(refined)
+                b64_method2 = self.convert_base64_to_image(method2)
+                b64_method3 = self.convert_base64_to_image(method3)
                 b64_rellenada = self.convert_base64_to_image(rellenada) 
                 b64_eroded = self.convert_base64_to_image(eroded)
                 b64_p = self.convert_base64_to_image(P)
@@ -79,7 +109,13 @@ class ImageUploadView(APIView):
                     {'result':'grayscale','url': f'data:image/png;base64,{b64_gray}'},
                     {'result':'blur Gaussian','url': f'data:image/png;base64,{b64_blur}'},
                     {'result':'canny','url': f'data:image/png;base64,{b64_cany}'},
+                    {'result':'otsu','url': f'data:image/png;base64,{b64_ost}'},
                     {'result':'dilated','url': f'data:image/png;base64,{b64_dil}'},
+                    #metodos de mascara otsu, canny y otsu+canny
+                    {'result':'metodo 1','url': f'data:image/png;base64,{b64_method1}'},
+                    {'result':'metodo 2','url': f'data:image/png;base64,{b64_method2}'},                    
+                    {'result':'metodo 3','url': f'data:image/png;base64,{b64_method3}'},
+
                     {'result':'rellenada','url': f'data:image/png;base64,{b64_rellenada}'},
                     {'result':'eroded','url': f'data:image/png;base64,{b64_eroded}'},
                     {'result':'Eliminado pequeños objetos','url': f'data:image/png;base64,{b64_p}'},
