@@ -12,6 +12,7 @@ class BrainDiagnosticsProcessor:
     """
     Clase dedicada exclusivamente a manipular los tensores y extraer info de la imagen.
     Mantiene cada 'etapa' de la transformación en funciones separadas.
+    
     """
     def __init__(self, image_bytes):
         # 1. Lectura e inicialización
