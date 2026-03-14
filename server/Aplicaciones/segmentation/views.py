@@ -12,7 +12,7 @@ class BrainDiagnosticsProcessor:
     """
     Clase dedicada exclusivamente a manipular los tensores y extraer info de la imagen.
     Mantiene cada 'etapa' de la transformación en funciones separadas.
-    
+
     """
     def __init__(self, image_bytes):
         # 1. Lectura e inicialización
@@ -164,3 +164,4 @@ class ImageUploadView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
