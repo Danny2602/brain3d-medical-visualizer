@@ -5,17 +5,22 @@ import { useForm } from 'react-hook-form'
 import { PacmanLoader } from 'react-spinners'
 export default function Segmentacion() {
     const [data, setData] = useState()
+    const [data2, setData2] = useState()
     const { register, handleSubmit } = useForm()
     const [expandida, setExpandida] = useState(false)
     const [imagenSeleccionada, setImagenSeleccionada] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [tap, setTap] = useState(false)
 
     const onSubmit = async (data) => {
         setLoading(true)
         const formData = new FormData();
         formData.append('image', data.file[0]);
         const res = await segmentacion.postSegementacion(formData);
+        const res2 = await segmentacion.postSegementacionFourier(formData);
         setData(res);
+        setData2(res2);
+
         console.log(res);
         await new Promise((resolve) => setTimeout(resolve, 2000));
         setLoading(false)
@@ -35,34 +40,79 @@ export default function Segmentacion() {
                     {loading ? 'Enviando...' : 'Enviar'}
                 </button>
             </form>
+            <div className='flex gap-2'>
+                <button onClick={() => setTap("segmentacion")} className={`bg-blue-400 text-black p-1 border-2 rounded-2xl cursor-pointer hover:bg-blue-600 hover:text-white transition-all
+                ${tap == "segmentacion" ? 'bg-blue-950 text-white' : ''}
+                `}
+                >
+                    {tap == "segmentacion" ? 'Segmentacion' : 'Segmentacion'}
+                </button>
+                <button onClick={() => setTap("fourier")} className={`bg-blue-400 text-black p-1 border-2 rounded-2xl cursor-pointer hover:bg-blue-600 hover:text-white transition-all
+                ${tap == "fourier" ? 'bg-blue-950 text-white' : ''}
+                `}
+                >
+                    {tap == "fourier" ? 'Fourier' : 'Fourier'}
+                </button>
+            </div>
 
             <div className='grid grid-cols-1 md:gap-3 md:grid-cols-3'>
-                {data && (
-                    data.map((item, index) => (
-                        <>
-                            <div className="mt-4" style={{ position: "relative", display: "inline-block" }}>
-                                <p>Imagen {item.result} {index + 1}:</p>
-                                <img src={item.url} alt="Segmentación" className=" border-2" />
-                                {/* Botón encima de la imagen */}
-                                <button
-                                    onClick={() => { setExpandida(true), setImagenSeleccionada(item) }}
-                                    className=' text-white  rounded-2xl cursor-pointer absolute top-7 right-2'
 
-                                >
-                                    ⛶
-                                </button>
-                            </div>
+                {tap == "segmentacion" ? (
 
-                            {expandida &&
-                                <ImagenExpanded data={imagenSeleccionada} setExpandida={setExpandida} />
+                    data && (
+                        data.map((item, index) => (
+                            <>
 
-                            }
+                                <div className="mt-4" style={{ position: "relative", display: "inline-block" }}>
+                                    <p>Imagen {item.result} {index + 1}:</p>
+                                    <img src={item.url} alt="Segmentación" className=" border-2" />
+                                    {/* Botón encima de la imagen */}
+                                    <button
+                                        onClick={() => { setExpandida(true), setImagenSeleccionada(item) }}
+                                        className=' text-white  rounded-2xl cursor-pointer absolute top-7 right-2'
+                                    >
+                                        ⛶
+                                    </button>
+                                </div>
 
-                        </>
+                                {expandida &&
+                                    <ImagenExpanded data={imagenSeleccionada} setExpandida={setExpandida} />
+
+                                }
+                            </>
+                        ))
+                    )
+                ) : (
+                    data2 && (
+                        data2.map((item, index) => (
+                            <>
+
+                                <div className="mt-4" style={{ position: "relative", display: "inline-block" }}>
+                                    <p>Imagen {item.result} {index + 1}:</p>
+                                    <img src={item.url} alt="Segmentación" className=" border-2" />
+                                    {/* Botón encima de la imagen */}
+                                    <button
+                                        onClick={() => { setExpandida(true), setImagenSeleccionada(item) }}
+                                        className=' text-white  rounded-2xl cursor-pointer absolute top-7 right-2'
+
+                                    >
+                                        ⛶
+                                    </button>
+                                </div>
+
+                                {expandida &&
+                                    <ImagenExpanded data={imagenSeleccionada} setExpandida={setExpandida} />
+
+                                }
+
+                            </>
 
 
-                    ))
+                        ))
+                    )
+
                 )}
+
             </div>
 
         </>
