@@ -19,7 +19,9 @@ class BrainDiagnosticsProcessor:
         self.img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
         self.img = cv2.convertScaleAbs(self.img, alpha=1, beta=0)
         self.img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
-        
+    
+    
+
     def denoise_and_enhance(self):
         # Filtro Non-Local Means (mejora ruido sin perder bordes a diferencia de Gaussian)
         denoised = cv2.fastNlMeansDenoising(self.img_gray, None, h=10, templateWindowSize=7, searchWindowSize=21)

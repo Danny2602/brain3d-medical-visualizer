@@ -1,128 +1,87 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-
 import cv2
 import numpy as np
 import base64
 from skimage.morphology import remove_small_objects
 
+# ==========================================
+# Si quieres agregar un nuevo filtro, 
+# solo creas una clase que herede de ImageFilter sin tocar lo demás.
 
-class FourierDiagnosticsProcessor:
-
-    def __init__(self, image_bytes):
-        # Lectura de la imagen desde bytes
-        self.img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
-
-        # Normalización básica
-        self.img = cv2.convertScaleAbs(self.img, alpha=1, beta=0)
-
-        # Escala de grises
-        self.img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+class ImageFilter:
+    """Clase base para todos los filtros de procesamiento."""
+    def apply(self, img, **kwargs):
+        raise NotImplementedError("Debe implementar el método apply")
 
 
-    # ----------------------------
-    # 1. PREPROCESAMIENTO (Denoise)
-    # ----------------------------
-    def denoise(self):
-        denoised = cv2.fastNlMeansDenoising(
-            self.img_gray,
-            None,
-            h=10,
-            templateWindowSize=7,
-            searchWindowSize=21
-        )
-        return denoised
+# ==========================================
+# MÓDULOS DE PROCESAMIENTO (SOLID: Responsabilidad Única)
+# ==========================================
+
+class DenoiseFilter(ImageFilter):
+    """Encargado EXCLUSIVAMENTE de limpiar el ruido espacial de origen."""
+    def apply(self, img_gray):
+        # NlMeans es excelente para ruido de sensor.
+        return cv2.fastNlMeansDenoising(img_gray, None, h=10, templateWindowSize=7, searchWindowSize=21)
 
 
-    # ----------------------------
-    # 2. FOURIER TRANSFORM (Gauss Alta Frecuencia)
-    # ----------------------------
-    def fourier_filter(self, img):
-        f = np.fft.fft2(img)
+class FourierHighPassFilter(ImageFilter):
+    """Encargado de la transformación y resaltado de frecuencias (Bordes gruesos)."""
+    def apply(self, img_gray):
+        f = np.fft.fft2(img_gray)
         fshift = np.fft.fftshift(f)
 
-        rows, cols = img.shape
+        rows, cols = img_gray.shape
         crow, ccol = rows // 2, cols // 2
-
-        # Crear matrices de distancias al centro
         x, y = np.meshgrid(np.arange(cols), np.arange(rows))
         dist_center = np.sqrt((x - ccol)**2 + (y - crow)**2)
         
-        # Radio de corte Gaussiano (D0)
-        D0 = 40.0
-        
-        # Filtro Gaussiano de Paso Alto
+        # D0 (Frecuencia de corte): Mantiene las estructuras principales.
+        D0 = 30.0 
         hpf = 1.0 - np.exp(-(dist_center**2) / (2 * (D0**2)))
         
-        # Énfasis de Altas Frecuencias (High-Frequency Emphasis)
-        # 0.5 conserva bajas frecuencias, 0.75 resalta bordes
-        high_freq_emphasis = 0.5 + 0.75 * hpf
-        
-        # Aplicar el filtro
+        high_freq_emphasis = 0.5 + 0.3 * hpf
         filtered = fshift * high_freq_emphasis
 
-        # Calcular espectro de magnitud para visualización
-        magnitude = 20 * np.log(np.abs(fshift) + 1)
-        magnitude = cv2.normalize(
-            magnitude,
-            None,
-            0,
-            255,
-            cv2.NORM_MINMAX
-        ).astype(np.uint8)
-
-        return filtered, magnitude
-
-
-    # ----------------------------
-    # 3. INVERSE FOURIER
-    # ----------------------------
-    def inverse_fourier(self, filtered):
+        # Regreso al dominio espacial directamente aquí
         f_ishift = np.fft.ifftshift(filtered)
         img_back = np.fft.ifft2(f_ishift)
         img_back = np.abs(img_back)
+        img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-        img_back = cv2.normalize(
-            img_back,
-            None,
-            0,
-            255,
-            cv2.NORM_MINMAX
-        ).astype(np.uint8)
+        # Solo para visualización web
+        magnitude = 20 * np.log(np.abs(fshift) + 1)
+        magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-        return img_back
+        return img_back, magnitude
 
 
-    # ----------------------------
-    # 4. MEJORA DE CONTRASTE (CLAHE)
-    # ----------------------------
-    def enhance_contrast(self, img):
-        clahe = cv2.createCLAHE(
-            clipLimit=2.5,
-            tileGridSize=(8, 8)
-        )
+class ContrastEnhancer(ImageFilter):
+    """
+    Controla CLAHE y Morfología.
+    AQUÍ SOLUCIONAMOS EL RUIDO: Reducimos la sensibilidad en zonas planas.
+    """
+    def apply(self, img):
+        # SOLUCIÓN RUIDO CLAHE:
+        # clipLimit bajó de 2.5 a 1.2. 
+        # ¿Por qué?: Los cerebros tienen mucho líquido/zonas planas planas. Un clipLimit alto 
+        # genera ruido granular (arena) en esas zonas. 1.2 o 1.5 es suave y natural para tejidos.
+        clahe = cv2.createCLAHE(clipLimit=1.2, tileGridSize=(8, 8))
         clahe_img = clahe.apply(img)
 
-        # Adaptar el kernel al tamaño de la imagen para mejor escalabilidad
+        # SOLUCIÓN RUIDO TOP-HAT:
+        # Antes de extraer "detalles luminosos" (Top-Hat), PLANCHAMOS el micro-ruido con un bilateral suave.
+        # De esta forma, Top-Hat solo capturará vasos sanguíneos reales y no píxeles corruptos.
+        smoothed_for_morph = cv2.bilateralFilter(clahe_img, d=5, sigmaColor=35, sigmaSpace=35)
+
+        # Kernel elíptico (simula formas celulares/orgánicas)
         rows, cols = img.shape
-        kernel_height = max(1, rows // 200)  # Altura proporcional (pequeña para detalles finos)
-        kernel_width = max(1, cols // 50)   # Anchura proporcional (alargada horizontalmente)
-        kernel = cv2.getStructuringElement(
-            cv2.MORPH_RECT,
-            (kernel_height, kernel_width)
-        )
-        top_hat = cv2.morphologyEx(
-            clahe_img,
-            cv2.MORPH_TOPHAT,
-            kernel
-        )
-        black_hat = cv2.morphologyEx(
-            clahe_img,
-            cv2.MORPH_BLACKHAT,
-            kernel
-        )
+        k_size = max(3, min(rows, cols) // 50) 
+        if k_size % 2 == 0: k_size += 1
+        
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k_size, k_size))
+        
+        top_hat = cv2.morphologyEx(smoothed_for_morph, cv2.MORPH_TOPHAT, kernel)
+        black_hat = cv2.morphologyEx(smoothed_for_morph, cv2.MORPH_BLACKHAT, kernel)
 
         morph = cv2.add(clahe_img, top_hat)
         morph = cv2.subtract(morph, black_hat)
@@ -130,131 +89,142 @@ class FourierDiagnosticsProcessor:
         return clahe_img, morph
 
 
-    # ----------------------------
-    # 5. MEJORA DE DETALLE (Laplaciano)
-    # ----------------------------
-    def enhance_details(self, img):
-        gaussian = cv2.GaussianBlur(img, (0, 0), 3)
-        unsharp = cv2.addWeighted(img, 2.0, gaussian, -1.0, 0)
+class DetailEnhancer(ImageFilter):
+    """Extrae texturas y afina bordes mediante Unsharp y Laplaciano."""
+    def apply(self, img):
+        # Unsharp Masking Suave: Reducimos la agresividad de 2.0 a 1.5
+        gaussian = cv2.GaussianBlur(img, (0, 0), 2)
+        unsharp = cv2.addWeighted(img, 1.5, gaussian, -0.5, 0)
 
-        laplacian = cv2.Laplacian(
-            unsharp,
-            cv2.CV_64F,
-            ksize=3
-        )
+        # SOLUCIÓN RUIDO LAPLACIANO:
+        # El Laplaciano es un imán de ruido. Si lo aplicamos directo, estalla.
+        # Filtramos la imagen SOLO para calcular el Laplaciano, así evitamos derivar el ruido base.
+        smooth_for_laplacian = cv2.bilateralFilter(unsharp, d=5, sigmaColor=40, sigmaSpace=40)
+        
+        laplacian = cv2.Laplacian(smooth_for_laplacian, cv2.CV_64F, ksize=3)
         laplacian_abs = cv2.convertScaleAbs(laplacian)
 
-        super_detail = cv2.addWeighted(
-            unsharp,
-            0.85,
-            laplacian_abs,
-            0.15,
-            0
-        )
-
-        return unsharp,gaussian, super_detail
+        # Bajamos la opacidad del laplaciano (ruido) a solo 10% de impacto (antes 15%).
+        super_detail = cv2.addWeighted(unsharp, 0.90, laplacian_abs, 0.10, 0)
+        
+        return unsharp, gaussian, super_detail
 
 
-    # ----------------------------
-    # 6. SEGMENTACIÓN (Otsu & Canny)
-    # ----------------------------
-    def segmentation(self, img):
-        blur = cv2.GaussianBlur(img, (11, 11), 0)
+class IntelligentSegmenter(ImageFilter):
+    """Binarización inteligente combinando Otsu y Canny."""
+    def apply(self, img_detail):
+        # Planchado masivo de texturas previo a segmentación. 
+        # Mantiene bordes afilados para no perder la forma del tumor.
+        blur = cv2.bilateralFilter(img_detail, 9, 75, 75)
 
-        _, otsu = cv2.threshold(
-            blur,
-            0,
-            255,
-            cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        )
-
-        canny = cv2.Canny(img, 350, 400)
+        _, otsu = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        canny = cv2.Canny(img_detail, 350, 400) # Canny sí sobre el detalle para no perder perímetro
 
         return otsu, canny
 
 
-    # ----------------------------
-    # 7. REFINAMIENTO DE MÁSCARA
-    # ----------------------------
-    def refine(self, otsu, canny):
-        m1 = cv2.bitwise_and(otsu, canny)
+class MaskConnectivityRefiner(ImageFilter):
+    """
+    Restaura fracturas y limpia ruido aislando LA MÁSCARA BINARIA de acuerdo 
+    al modelo de conectividades (4-vecinos y 8-vecinos).
+    """
+    def apply(self, otsu, canny):
+        m1_or = cv2.bitwise_or(otsu, canny)
+        
+        # Conectividad 4 (Mínima): Borra granitos de arena aislados.
+        kernel_4 = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+        opened = cv2.morphologyEx(m1_or, cv2.MORPH_OPEN, kernel_4)
+        
+        # Conectividad 8 (Evolucionada 5x5): Rellena las grietas entre tumores fragmentados.
+        kernel_8_thick = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel_8_thick)
+        
+        # Relleno de agujeros internos
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        m3_filled = np.zeros_like(otsu)
+        cv2.drawContours(m3_filled, contours, -1, 255, thickness=cv2.FILLED)
 
-        kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE,
-            (4, 4)
-        )
-        canny_dilated = cv2.dilate(canny, kernel, iterations=2)
-        m2 = cv2.bitwise_or(otsu, canny_dilated)
-
-        contours, _ = cv2.findContours(
-            otsu,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-
-        m3 = np.zeros_like(otsu)
-        cv2.drawContours(
-            m3,
-            contours,
-            -1,
-            255,
-            thickness=cv2.FILLED
-        )
-
-        m3 = cv2.bitwise_or(otsu, m3)
-
-        return m1, m2, m3
+        final_m3 = cv2.bitwise_or(closed, m3_filled)
+        return m1_or, closed, final_m3
 
 
-    # ----------------------------
-    # 8. LIMPIEZA FINAL Y EXTRACCIÓN
-    # ----------------------------
-    def final_mask(self, mask, original):
-        h, w = mask.shape
-        flood_mask = np.zeros((h + 2, w + 2), np.uint8)
+class TissueExtractor(ImageFilter):
+    """Procesa el recorte final y deshecha masas menores a un tamaño vital."""
+    def apply(self, mask, original_img):
+        # 10000 píxeles. Si consideras que borra tumores válidos, reducelo a 5000 o 3000.
+        cleaned_mask = remove_small_objects(mask.astype(bool), 10000)
+        cleaned_mask = (cleaned_mask * 255).astype(np.uint8)
 
-        filled = mask.copy()
-        cv2.floodFill(filled, flood_mask, (0, 0), 255)
-        filled_inv = cv2.bitwise_not(filled)
-
-        rellenada = cv2.bitwise_or(mask, filled_inv)
-
-        kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE,
-            (5, 5)
-        )
-        eroded = cv2.erode(rellenada, kernel)
-
-        # Usar skimage para quitar fragmentos pequeños de ruido
-        cleaned = remove_small_objects(
-            eroded.astype(bool),
-            10000
-        )
-        cleaned = (cleaned * 255).astype(np.uint8)
-
-        dilated = cv2.dilate(cleaned, kernel)
-
-        masked = cv2.bitwise_and(
-            original,
-            original,
-            mask=dilated
-        )
-
-        return dilated, masked
+        masked_tumor = cv2.bitwise_and(original_img, original_img, mask=cleaned_mask)
+        return cleaned_mask, masked_tumor
 
 
-    # ----------------------------
-    # UTILIDAD BASE64
-    # ----------------------------
+# ==========================================
+# PIPELINE ORQUESTADOR (Patrón Fachada / SOLID)
+# ==========================================
+
+class MedicalDiagnosticPipeline:
+    """
+    Orquesta los filtros paso a paso. Cumple Inversión de Dependencias y 
+    Responsabilidad única, ya que solo delega, no calcula.
+    """
+    def __init__(self, image_bytes):
+        self.img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+        self.img = cv2.convertScaleAbs(self.img, alpha=1, beta=0)
+        self.img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+
+        # Instanciar submódulos
+        self.denoise_filter = DenoiseFilter()
+        self.fourier_filter = FourierHighPassFilter()
+        self.enhancer = ContrastEnhancer()
+        self.detailer = DetailEnhancer()
+        self.segmenter = IntelligentSegmenter()
+        self.refiner = MaskConnectivityRefiner()
+        self.extractor = TissueExtractor()
+
+    def process_all(self):
+        """Ejecuta el pipeline de procesamiento fotograma a fotograma."""
+        denoised = self.denoise_filter.apply(self.img_gray)
+        img_back, fourier_mag = self.fourier_filter.apply(denoised)
+        
+        clahe, morph = self.enhancer.apply(img_back)
+        unsharp, gaussian, super_detail = self.detailer.apply(morph)
+        
+        otsu, canny = self.segmenter.apply(super_detail)
+        m1, m2_closed, m3_filled = self.refiner.apply(otsu, canny)
+        
+        final_mask, masked_img = self.extractor.apply(m3_filled, super_detail)
+
+        return {
+            "original": self.img,
+            "gray": self.img_gray,
+            "denoise": denoised,
+            "fourier spectrum": fourier_mag,
+            "inverse fourier": img_back,
+            "clahe": clahe,
+            "top/black-hat": morph,
+            "unsharp": unsharp,
+            "gaussian": gaussian,
+            "super detail": super_detail,
+            "otsu": otsu,
+            "canny": canny,
+            "m1_or": m1,
+            "m2_closed": m2_closed,
+            "method3_filled": m3_filled,
+            "final cleaned mask": final_mask,
+            "masked tumor": masked_img
+        }
+
     @staticmethod
     def to_b64(img):
+        """Herramienta de conversión aislada."""
         _, buffer = cv2.imencode('.png', img)
         return "data:image/png;base64," + base64.b64encode(buffer).decode()
 
 
-# ----------------------------------
-# DJANGO API
-# ----------------------------------
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
 class FourierUploadView(APIView):
 
@@ -262,59 +232,20 @@ class FourierUploadView(APIView):
         image = request.FILES.get("image")
 
         if not image:
-            return Response(
-                {"error": "No image received"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "No image received"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # 0. Iniciar procesador
-            processor = FourierDiagnosticsProcessor(image.read())
+            # Nuestro pipeline ahora es limpio y orientado a objetos
+            pipeline = MedicalDiagnosticPipeline(image.read())
+            results_dict = pipeline.process_all()
 
-            # 1. Denoise espacial
-            denoised = processor.denoise()
-
-            # 2. Análisis y Filtrado de Frecuencias (Gaussiano Alto)
-            filtered, fourier = processor.fourier_filter(denoised)
-
-            # 3. Retorno al Dominio Espacial
-            img_back = processor.inverse_fourier(filtered)
-
-            # 4. Mejora Analítica (Contraste y Morfología)
-            clahe, morph = processor.enhance_contrast(img_back)
-
-            # 5. Super Resolución de Bordes
-            unsharp, gaussian, super_detail = processor.enhance_details(morph)
-
-            # 6. Detección Base
-            otsu, canny = processor.segmentation(super_detail)
-
-            # 7. Unión de Regiones
-            m1, m2, m3 = processor.refine(otsu, canny)
-
-            # 8. Máscara Limpia y Extracción Final
-            final_mask, masked_img = processor.final_mask(m2, super_detail)
-
-            # 9. Empaquetar resultados
-            results = [
-                {"step": "original", "url": processor.to_b64(processor.img)},
-                {"step": "gray", "url": processor.to_b64(processor.img_gray)},
-                {"step": "denoise", "url": processor.to_b64(denoised)},
-                {"step": "fourier spectrum", "url": processor.to_b64(fourier)},
-                {"step": "inverse fourier", "url": processor.to_b64(img_back)},
-                {"step": "clahe", "url": processor.to_b64(clahe)},
-                {"step": "morph", "url": processor.to_b64(morph)},
-                {"step": "unsharp", "url": processor.to_b64(unsharp)},
-                {"step": "gaussian", "url": processor.to_b64(gaussian)},
-                {"step": "super detail", "url": processor.to_b64(super_detail)},
-                {"step": "otsu", "url": processor.to_b64(otsu)},
-                {"step": "canny", "url": processor.to_b64(canny)},
-                {"step": "method3", "url": processor.to_b64(m3)},
-                {"step": "final mask", "url": processor.to_b64(final_mask)},
-                {"step": "masked tumor", "url": processor.to_b64(masked_img)}
+            # Mapeo a respuesta API iterando de manera robusta
+            api_response = [
+                {"result": name, "url": MedicalDiagnosticPipeline.to_b64(img)}
+                for name, img in results_dict.items()
             ]
 
-            return Response(results)
+            return Response(api_response)
 
         except Exception as e:
             return Response(
