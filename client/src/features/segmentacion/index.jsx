@@ -33,7 +33,6 @@ export default function Segmentacion() {
             <div>Segmentacion de Imagenes</div>
             <br></br>
 
-
             <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-2 md:flex-row'>
                 <input type='file' {...register('file')} className='bg-white p-1 border-2 rounded-2xl cursor-pointer' />
                 <button type='submit' className='bg-blue-400 text-black p-1 border-2 rounded-2xl cursor-pointer' disabled={loading}>

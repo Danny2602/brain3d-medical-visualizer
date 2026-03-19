@@ -6,6 +6,7 @@ from skimage.morphology import remove_small_objects
 # ==========================================
 # Si quieres agregar un nuevo filtro, 
 # solo creas una clase que herede de ImageFilter sin tocar lo demás.
+# Procesamiento de imagenes medicas para segementacion test fourier
 
 class ImageFilter:
     """Clase base para todos los filtros de procesamiento."""
@@ -14,7 +15,7 @@ class ImageFilter:
 
 
 # ==========================================
-# MÓDULOS DE PROCESAMIENTO (SOLID: Responsabilidad Única)
+# MÓDULOS DE PROCESAMIENTO 
 # ==========================================
 
 class DenoiseFilter(ImageFilter):
@@ -160,7 +161,7 @@ class TissueExtractor(ImageFilter):
 
 
 # ==========================================
-# PIPELINE ORQUESTADOR (Patrón Fachada / SOLID)
+# PIPELINE ORQUESTADOR 
 # ==========================================
 
 class MedicalDiagnosticPipeline:
