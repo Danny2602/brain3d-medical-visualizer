@@ -123,21 +123,21 @@ class ImageUploadView(APIView):
             return Response({'error': 'No se recibió ninguna imagen'}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            # 1. Inicializamos clase con lo recibido
+            #  Inicializamos clase con lo recibido
             processor = BrainDiagnosticsProcessor(image.read())
             
-            # 2. Empezamos el pipeline (Paso a paso, súper legible)
+            #  Empezamos el pipeline (Paso a paso, súper legible)
             denoised, clahe, morph = processor.denoise_and_enhance()
             unsharp, super_detail = processor.enhance_details(morph)
             otsu, canny = processor.create_base_masks(denoised)
             
-            # 3. Aplicar las matemáticas de intersección que pediste
+            #  Aplicar las matemáticas de intersección que pediste
             m1, m2, m3 = processor.get_refinement_methods(otsu, canny)
             
-            # 4. Elegimos el M3 como segmentación principal y generamos la foto recortada real
+            #  Elegimos el M3 como segmentación principal y generamos la foto recortada real
             rellenada, eroded, cleaned, dilated_final, masked_img = processor.execute_final_segmentation(m3,super_detail)
             
-            # 5. Transformada de espectro
+            #  Transformada de espectro
             fourier = processor.calculate_fourier()
 
             # Empaquetamos todo directamente a Base64 sin llenar la vista de lógica
