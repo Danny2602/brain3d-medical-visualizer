@@ -123,38 +123,6 @@ class IntelligentSegmenter(ImageFilter):
 
         return otsu, canny
 
-# class IntelligentSegmenter(ImageFilter):
-#     """Binarización inteligente combinando KMeans y Canny dinámico."""
-#     def apply(self, img_detail):
-#         blur = cv2.bilateralFilter(img_detail, 9, 75, 75)
-
-#         # 1. K-MEANS CLUSTERING EN LUGAR DE OTSU
-#         # Buscamos 4 grupos (Fondo, Tejido Oscuro, Tejido Intermedio, Tumor/Hueso brillante)
-#         Z = blur.reshape((-1, 1))
-#         Z = np.float32(Z)
-#         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-#         K = 4
-#         _, label, centers = cv2.kmeans(Z, K, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
-        
-#         # Recuperar la imagen segmentada en niveles
-#         centers = np.uint8(centers)
-#         res = centers[label.flatten()]
-#         segmented_img = res.reshape((img_detail.shape))
-        
-#         # Aislar únicamente el clúster más brillante (Tumor/Cráneo)
-#         max_intensity = np.max(centers)
-#         _, optimal_mask = cv2.threshold(segmented_img, max_intensity - 1, 255, cv2.THRESH_BINARY)
-
-#         # 2. CANNY DINÁMICO (Mejora el punto 2)
-#         v = np.median(img_detail)
-#         lower = int(max(0, (1.0 - 0.33) * v))
-#         upper = int(min(255, (1.0 + 0.33) * v))
-#         canny = cv2.Canny(img_detail, lower, upper)
-
-#         # Retornamos kmeans en lugar de otsu
-#         return optimal_mask, canny
-
-
 
 class MaskConnectivityRefiner(ImageFilter):
     """
@@ -182,22 +150,47 @@ class MaskConnectivityRefiner(ImageFilter):
 
 
 
-
 class TissueExtractor(ImageFilter):
-    """Procesa el recorte final mediante proporciones dinámicas."""
+    """Procesa el recorte final mediante análisis de Componentes Conexas."""
     def apply(self, mask, original_img):
-        # Evaluar el tamaño por el % de la imagen total
-        h, w = mask.shape
-        total_pixels = h * w
+        # 1. Ejecutar el Algoritmo de Componentes Conexas
+        # connectivity=8 evalúa píxeles vecinos en todas las direcciones (diagonales incluidas)
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
         
-        # Umbral: Eliminar todo lo que sea menor al 1.5% del área total de la imagen
-        min_size = int(total_pixels * 0.015) 
-        
-        cleaned_mask = remove_small_objects(mask.astype(bool), min_size)
-        cleaned_mask = (cleaned_mask * 255).astype(np.uint8)
+        # Si la imagen está completamente en negro (solo hay fondo/label 0), retornamos
+        if num_labels <= 1:
+            return mask, cv2.bitwise_and(original_img, original_img, mask=mask)
 
+        # 2. Definir el tamaño mínimo aceptado (1.5% de la imagen)
+        h, w = mask.shape
+        min_size = int((h * w) * 0.015) 
+        
+        # Matriz vacía donde dibujaremos solo los componentes válidos
+        cleaned_mask = np.zeros_like(mask)
+        
+        # 3. Iterar sobre todos los componentes encontrados
+        # Empezamos el bucle en 1 para ignorar el índice 0 (que siempre es el fondo negro)
+        for i in range(1, num_labels):
+            area = stats[i, cv2.CC_STAT_AREA]  # Extraer el área en píxeles del componente actual
+            
+            # Si supera el umbral, "encendemos" todos los píxeles de ese componente
+            if area >= min_size:
+                cleaned_mask[labels == i] = 255
+                
+        # ==============================================================================
+        # 🔥 OPCIONAL (Mejora médica): 
+        # Si en algún momento necesitas extraer ESTRICTAMENTE el tumor principal y
+        # borrar cualquier otra mancha flotante sin importar su tamaño, borras el  
+        # bucle "for" de arriba e insertas esto para extraer el componente más grande:
+        #
+        # largest_label = 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])
+        # cleaned_mask[labels == largest_label] = 255
+        # ==============================================================================
+
+        # 4. Aislar el tejido en la imagen original
         masked_tumor = cv2.bitwise_and(original_img, original_img, mask=cleaned_mask)
         return cleaned_mask, masked_tumor
+
 
 # ==========================================
 # PIPELINE ORQUESTADOR 
