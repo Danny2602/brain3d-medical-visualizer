@@ -26,34 +26,68 @@ class DenoiseFilter(ImageFilter):
 
 
 class FourierHighPassFilter(ImageFilter):
-    """Encargado de la transformación y resaltado de frecuencias (Bordes gruesos)."""
+    """
+    --- FILTRO ANULADO ---
+    Generaba exceso de afilado compitiendo con DetailEnhancer.
+    Conceptualmente redundante en este pipeline.
+    ----------------------
+    """
     def apply(self, img_gray):
-        f = np.fft.fft2(img_gray)
-        fshift = np.fft.fftshift(f)
+        # f = np.fft.fft2(img_gray)
+        # fshift = np.fft.fftshift(f)
 
-        rows, cols = img_gray.shape
-        crow, ccol = rows // 2, cols // 2
-        x, y = np.meshgrid(np.arange(cols), np.arange(rows))
-        dist_center = np.sqrt((x - ccol)**2 + (y - crow)**2)
+        # rows, cols = img_gray.shape
+        # crow, ccol = rows // 2, cols // 2
+        # x, y = np.meshgrid(np.arange(cols), np.arange(rows))
+        # dist_center = np.sqrt((x - ccol)**2 + (y - crow)**2)
         
-        # D0 (Frecuencia de corte): Mantiene las estructuras principales.
-        D0 = 30.0 
-        hpf = 1.0 - np.exp(-(dist_center**2) / (2 * (D0**2)))
+        # # D0 (Frecuencia de corte): Mantiene las estructuras principales.
+        # D0 = 30.0 
+        # hpf = 1.0 - np.exp(-(dist_center**2) / (2 * (D0**2)))
         
-        high_freq_emphasis = 0.5 + 0.3 * hpf
-        filtered = fshift * high_freq_emphasis
+        # high_freq_emphasis = 0.5 + 0.3 * hpf
+        # filtered = fshift * high_freq_emphasis
 
-        # Regreso al dominio espacial directamente aquí
-        f_ishift = np.fft.ifftshift(filtered)
-        img_back = np.fft.ifft2(f_ishift)
-        img_back = np.abs(img_back)
-        img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        # # Regreso al dominio espacial directamente aquí
+        # f_ishift = np.fft.ifftshift(filtered)
+        # img_back = np.fft.ifft2(f_ishift)
+        # img_back = np.abs(img_back)
+        # img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-        # Solo para visualización web
-        magnitude = 20 * np.log(np.abs(fshift) + 1)
-        magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        # # Solo para visualización web
+        # magnitude = 20 * np.log(np.abs(fshift) + 1)
+        # magnitude = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
-        return img_back, magnitude
+        # return img_back, magnitude
+        pass
+
+
+class IlluminationCorrector(ImageFilter):
+    """
+    Controla el balance de luz global mediante transformaciones matemáticas.
+    """
+    def apply(self, img_gray, mode="gamma", factor=1.2):
+        # Convertimos la imagen de [0 a 255] a rango flotante [0.0 a 1.0] 
+        # para que las matemáticas exponenciales no den errores de desbordamiento.
+        img_float = img_gray.astype(np.float32) / 255.0
+
+        if mode == "log":
+            # TRANSFORMACIÓN LOGARÍTMICA: s = c * log(1 + r)
+            # Expande drásticamente las zonas negras revelando detalles ocultos en las sombras.
+            c = 1.0 / np.log(1.0 + np.max(img_float))
+            transformed = c * np.log(1.0 + img_float)
+
+        elif mode == "gamma" or mode == "exp":
+            # TRANSFORMACIÓN EXPONENCIAL (Gamma): s = c * r^gamma
+            # factor > 1: Efecto "apagar la luz", oscurece todo excepto lo más brillante.
+            # factor < 1: Actúa parecido al logaritmo, aclarando la imagen.
+            transformed = np.power(img_float, factor)
+
+        else:
+            transformed = img_float
+
+        # Regresamos la imagen a escala OpenCV (0 a 255 en uint8)
+        return (transformed * 255).astype(np.uint8)
 
 
 class ContrastEnhancer(ImageFilter):
@@ -114,11 +148,12 @@ class DetailEnhancer(ImageFilter):
 class IntelligentSegmenter(ImageFilter):
     """Binarización inteligente combinando Otsu y Canny."""
     def apply(self, img_detail):
-        # Planchado masivo de texturas previo a segmentación. 
-        # Mantiene bordes afilados para no perder la forma del tumor.
-        blur = cv2.bilateralFilter(img_detail, 9, 75, 75)
-
-        _, otsu = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # --- FILTRO DE PLANCHADO MASIVO ANULADO ---
+        # Innecesario ahora que el ruido de afilado múltiple fue corregido
+        # blur = cv2.bilateralFilter(img_detail, 9, 75, 75)
+        # _, otsu = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        _, otsu = cv2.threshold(img_detail, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         canny = cv2.Canny(img_detail, 350, 400) # Canny sí sobre el detalle para no perder perímetro
 
         return otsu, canny
@@ -178,7 +213,7 @@ class TissueExtractor(ImageFilter):
                 cleaned_mask[labels == i] = 255
                 
         # ==============================================================================
-        # 🔥 OPCIONAL (Mejora médica): 
+        # EN caso de necesidad, puedes extraer el componente más grande: (Tener en cuenta esto para pruebas)
         # Si en algún momento necesitas extraer ESTRICTAMENTE el tumor principal y
         # borrar cualquier otra mancha flotante sin importar su tamaño, borras el  
         # bucle "for" de arriba e insertas esto para extraer el componente más grande:
@@ -205,6 +240,7 @@ class MedicalDiagnosticPipeline:
         self.img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
         self.img = cv2.convertScaleAbs(self.img, alpha=1, beta=0)
         self.img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
+        self.illumination = IlluminationCorrector()
 
         # Instanciar submódulos
         self.denoise_filter = DenoiseFilter()
@@ -218,9 +254,13 @@ class MedicalDiagnosticPipeline:
     def process_all(self):
         """Ejecuta el pipeline de procesamiento fotograma a fotograma."""
         denoised = self.denoise_filter.apply(self.img_gray)
-        img_back, fourier_mag = self.fourier_filter.apply(denoised)
+        #El factor 1.5 es para corregir la iluminación, se puede ajustar si es necesario para que la imagen se vea mas clara o mas oscura
+        illum_fixed = self.illumination.apply(denoised, mode="gamma", factor=1.5)
         
-        clahe, morph = self.enhancer.apply(img_back)
+        # --- FILTRO DE FOURIER ANULADO POR REDUNDANCIA ---
+        # img_back, fourier_mag = self.fourier_filter.apply(illum_fixed)
+        
+        clahe, morph = self.enhancer.apply(illum_fixed) # Pasa directo al potenciador de contraste
         unsharp, gaussian, super_detail = self.detailer.apply(morph)
         
         otsu, canny = self.segmenter.apply(super_detail)
@@ -232,8 +272,9 @@ class MedicalDiagnosticPipeline:
             "original": self.img,
             "gray": self.img_gray,
             "denoise": denoised,
-            "fourier spectrum": fourier_mag,
-            "inverse fourier": img_back,
+            "illumination fixed": illum_fixed,
+            # "fourier spectrum": fourier_mag,      # ANULADO
+            # "inverse fourier": img_back,          # ANULADO
             "clahe": clahe,
             "top/black-hat": morph,
             "unsharp": unsharp,
