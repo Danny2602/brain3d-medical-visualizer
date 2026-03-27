@@ -90,6 +90,18 @@ class IlluminationCorrector(ImageFilter):
         return (transformed * 255).astype(np.uint8)
 
 
+class HistogramStretcher(ImageFilter):
+    """
+    Mejora: Expansión de Contraste Lineal (Min-Max Normalization).
+    Estira los valores de los píxeles (del más oscuro al más claro) para que ocupen todo el rango [0, 255].
+    Garantiza que el contraste base sea ancho antes de pasarlo al ecualizador local adaptativo.
+    """
+    def apply(self, img_gray):
+        # cv2.normalize realiza la expansión de contraste lineal matemática:
+        stretched = cv2.normalize(img_gray, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+        return stretched
+
+
 class ContrastEnhancer(ImageFilter):
     """
     Controla CLAHE y Morfología.
@@ -241,6 +253,7 @@ class MedicalDiagnosticPipeline:
         self.img = cv2.convertScaleAbs(self.img, alpha=1, beta=0)
         self.img_gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
         self.illumination = IlluminationCorrector()
+        self.stretcher = HistogramStretcher()
 
         # Instanciar submódulos
         self.denoise_filter = DenoiseFilter()
@@ -257,10 +270,15 @@ class MedicalDiagnosticPipeline:
         #El factor 1.5 es para corregir la iluminación, se puede ajustar si es necesario para que la imagen se vea mas clara o mas oscura
         illum_fixed = self.illumination.apply(denoised, mode="gamma", factor=1.5)
         
-        # --- FILTRO DE FOURIER ANULADO POR REDUNDANCIA ---
-        # img_back, fourier_mag = self.fourier_filter.apply(illum_fixed)
+        # ---> MEJORA ANTES DE CLAHE <---
+        # Aseguramos que el contraste base ocupe todo el rango 0-255 con una expansión asimétrica.
+        stretched = self.stretcher.apply(illum_fixed)
         
-        clahe, morph = self.enhancer.apply(illum_fixed) # Pasa directo al potenciador de contraste
+        # --- FILTRO DE FOURIER ANULADO POR REDUNDANCIA ---
+        # img_back, fourier_mag = self.fourier_filter.apply(stretched)
+        
+        # Pasa la imagen con expansión de contraste al potenciador adaptativo
+        clahe, morph = self.enhancer.apply(stretched) 
         unsharp, gaussian, super_detail = self.detailer.apply(morph)
         
         otsu, canny = self.segmenter.apply(super_detail)
@@ -273,6 +291,7 @@ class MedicalDiagnosticPipeline:
             "gray": self.img_gray,
             "denoise": denoised,
             "illumination fixed": illum_fixed,
+            "contrast stretched": stretched,
             # "fourier spectrum": fourier_mag,      # ANULADO
             # "inverse fourier": img_back,          # ANULADO
             "clahe": clahe,
