@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import base64
 from skimage.morphology import remove_small_objects
-
+#primera version de la vista, con un pipeline de procesamiento de imagenes muy detallado y modularizado en una clase dedicada. Cada etapa del proceso se mantiene en funciones separadas para claridad y mantenibilidad. Se incluyen técnicas avanzadas de mejora de imagen, segmentación y análisis espectral, todo empaquetado para una fácil integración con el frontend a través de Data URIs en Base64.
 class BrainDiagnosticsProcessor:
     """
     Clase dedicada exclusivamente a manipular los tensores y extraer info de la imagen.

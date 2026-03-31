@@ -200,7 +200,7 @@ class MaskConnectivityRefiner(ImageFilter):
 class TissueExtractor(ImageFilter):
     """Procesa el recorte final mediante análisis de Componentes Conexas."""
     def apply(self, mask, original_img):
-        # 1. Ejecutar el Algoritmo de Componentes Conexas
+        # Ejecutar el Algoritmo de Componentes Conexas
         # connectivity=8 evalúa píxeles vecinos en todas las direcciones (diagonales incluidas)
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
         
@@ -208,14 +208,14 @@ class TissueExtractor(ImageFilter):
         if num_labels <= 1:
             return mask, cv2.bitwise_and(original_img, original_img, mask=mask)
 
-        # 2. Definir el tamaño mínimo aceptado (1.5% de la imagen)
+        # Definir el tamaño mínimo aceptado (1.5% de la imagen)
         h, w = mask.shape
         min_size = int((h * w) * 0.015) 
         
         # Matriz vacía donde dibujaremos solo los componentes válidos
         cleaned_mask = np.zeros_like(mask)
         
-        # 3. Iterar sobre todos los componentes encontrados
+        # Iterar sobre todos los componentes encontrados
         # Empezamos el bucle en 1 para ignorar el índice 0 (que siempre es el fondo negro)
         for i in range(1, num_labels):
             area = stats[i, cv2.CC_STAT_AREA]  # Extraer el área en píxeles del componente actual
