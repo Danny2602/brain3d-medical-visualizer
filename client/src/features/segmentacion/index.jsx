@@ -21,8 +21,7 @@ export default function Segmentacion() {
         setData(res);
         setData2(res2);
 
-        console.log(res);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+
         setLoading(false)
     }
     if (loading) {
