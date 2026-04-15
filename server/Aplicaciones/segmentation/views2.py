@@ -160,11 +160,6 @@ class DetailEnhancer(ImageFilter):
 class IntelligentSegmenter(ImageFilter):
     """Binarización inteligente combinando Otsu y Canny."""
     def apply(self, img_detail):
-        # --- FILTRO DE PLANCHADO MASIVO ANULADO ---
-        # Innecesario ahora que el ruido de afilado múltiple fue corregido
-        # blur = cv2.bilateralFilter(img_detail, 9, 75, 75)
-        # _, otsu = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
         _, otsu = cv2.threshold(img_detail, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         canny = cv2.Canny(img_detail, 350, 400) # Canny sí sobre el detalle para no perder perímetro
 
