@@ -1,0 +1,11 @@
+# Entornos Virtuales
+venv/
+env/
+.env
+
+# Archivos de caché de Python (Archivos temporales basura)
+__pycache__/
+*.pyc
+
+# Imágenes residuales o de prueba (si llegas a guardar imágenes locales)
+temp_images/
