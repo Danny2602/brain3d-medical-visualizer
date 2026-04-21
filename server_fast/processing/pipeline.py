@@ -12,6 +12,8 @@ from processing.filters.edge_detection.otsu_threshold import OtsuThresholdFilter
 from processing.filters.detail_enhancement.laplacian import LaplacianFilter
 from processing.filters.detail_enhancement.unsharp_mask import UnsharpMaskFilter
 from processing.filters.detail_enhancement.tophat_morf import TopHatMorfFilter
+from processing.filters.operations.bitwise_and import LogicAndFilter
+from processing.filters.operations.bitwise_or import LogicOrFilter
 FILTERS_REGISTRY = {
     #noise_reduction
     "nl_means": NlMeansFilter(),
@@ -31,6 +33,9 @@ FILTERS_REGISTRY = {
     "laplacian": LaplacianFilter(),
     "unsharp_mask": UnsharpMaskFilter(),
     "tophat_morf": TopHatMorfFilter(),
+    #operations
+    "logic_and": LogicAndFilter(),
+    "logic_or": LogicOrFilter(),
 }
 
 class MedicalPipelineBuilder:
@@ -46,7 +51,7 @@ class MedicalPipelineBuilder:
             filter_params = step.get('params',{})
             filter_instance = FILTERS_REGISTRY.get(filter_name)
             if filter_instance:
-                self.current_image = filter_instance.apply(self.current_image, **filter_params)
+                self.current_image = filter_instance.apply(self.current_image, history=self.history, **filter_params)
                 self.history[filter_name] = self.current_image.copy()
             else:
                 print(f"Filter {filter_name} not found")
