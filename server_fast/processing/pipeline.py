@@ -1,8 +1,10 @@
 import numpy as np
 from processing.filters.noise_reduction.nl_means import NlMeansFilter
+from processing.filters.edge_detection.canny_filter import CannyEdgesFilter
 
 FILTERS_REGISTRY = {
     "nl_means": NlMeansFilter(),
+    "canny_edges": CannyEdgesFilter(),
 }
 
 class MedicalPipelineBuilder:
