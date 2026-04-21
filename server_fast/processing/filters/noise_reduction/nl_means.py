@@ -1,6 +1,7 @@
 #Este filtro se encarga de reducir el ruido de la imagen y el archivo tiene el nombre
 #nl_means.py : "filtro de reducción de ruido no local"
-
+#Entrega una imagen mas suave pero preservando los bordes casi igual 
+#que el filtro bilateral pero con la diferencia de que este filtro es mas rapido
 import cv2
 import numpy as np
 from processing.base import BaseFilter
