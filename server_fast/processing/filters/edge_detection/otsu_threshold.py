@@ -18,5 +18,11 @@ class OtsuThresholdFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen con el umbral de Otsu aplicado.
         """
+        # Blindaje: Otsu SOLO acepta CV_8UC1 (uint8 escala de grises)
+        if img.dtype != np.uint8:
+            img = cv2.convertScaleAbs(img)
+        if len(img.shape) == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
         _, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return thresh

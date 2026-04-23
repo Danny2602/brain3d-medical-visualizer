@@ -19,5 +19,11 @@ class LaplacianFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen con el filtro de laplaciano aplicado.
         """
-        img_filtered = cv2.Laplacian(img, cv2.CV_64F)
+        # cv2.CV_64F para no perder negativos en la derivada, luego regresamos a uint8
+        laplacian_raw = cv2.Laplacian(img, cv2.CV_64F, ksize=3)
+        laplacian_abs = cv2.convertScaleAbs(laplacian_raw)
+
+        # Mezcla suave: 90% imagen, 10% detalle laplaciano (igual que views2.py)
+        img_uint8 = img if img.dtype == np.uint8 else cv2.convertScaleAbs(img)
+        img_filtered = cv2.addWeighted(img_uint8, 0.90, laplacian_abs, 0.10, 0)
         return img_filtered

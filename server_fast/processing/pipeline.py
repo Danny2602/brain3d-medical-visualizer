@@ -7,6 +7,9 @@ from processing.filters.mask_extraction.morph_connect import MorphConnectFilter
 from processing.filters.illumination_contrast.clahe import CLAHEFilter
 from processing.filters.illumination_contrast.log_gamma  import LogGammaFilter
 from processing.filters.illumination_contrast.min_max import MinMaxFilter
+from processing.filters.illumination_contrast.fuzzy_logic import FuzzyLogicFilter
+from processing.filters.illumination_contrast.local_statistical import LocalStatisticalFilter
+from processing.filters.illumination_contrast.global_hist_eq import GlobalHistEqFilter
 from processing.filters.edge_detection.canny_filter import CannyEdgesFilter
 from processing.filters.edge_detection.otsu_threshold import OtsuThresholdFilter
 from processing.filters.detail_enhancement.laplacian import LaplacianFilter
@@ -26,6 +29,9 @@ FILTERS_REGISTRY = {
     "clahe": CLAHEFilter(),
     "log_gamma": LogGammaFilter(),
     "min_max": MinMaxFilter(),
+    "fuzzy_logic": FuzzyLogicFilter(),
+    "local_statistical": LocalStatisticalFilter(),
+    "global_hist_eq": GlobalHistEqFilter(),
     #edge_detection
     "canny_edges": CannyEdgesFilter(),
     "otsu_threshold": OtsuThresholdFilter(),

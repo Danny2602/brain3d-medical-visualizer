@@ -37,7 +37,7 @@ def image_to_base64(img: np.ndarray) -> str:
     return "data:image/png;base64," + base64.b64encode(buffer).decode()
 
 # ESTE ES EL CORAZÓN DE TU CONEXIÓN CON REACT
-@app.post("/process-image")
+@app.post("/api/process-image")
 async def process_image(
     image: UploadFile = File(...), 
     flow_config_json: str = Form(...) 
