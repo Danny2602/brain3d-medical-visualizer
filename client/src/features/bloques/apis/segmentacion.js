@@ -3,16 +3,18 @@ import api from "@/lib/axios";
 export const segmentacion = {
     postSegmentacion: async (image, data) => {
         const data2 = [];
-        data.map((item) => {
+        data.forEach((item) => {
             if (item.id !== 'none') {
+                // Recuperar los parámetros configurados visualmente (ej. por los Dropdowns)
+                let parametrosDelBloque = item.params ? { ...item.params } : {};
+
                 data2.push({
                     filter_name: item.name_api,
-                    params: {
-
-                    }
+                    params: parametrosDelBloque
                 });
             }
-        })
+        });
+        console.log(data2)
         try {
             const formData = new FormData();
             formData.append('image', image);

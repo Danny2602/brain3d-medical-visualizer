@@ -1,39 +1,96 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Trash2, Layers, Cpu, CheckCircle, Maximize2, X, ChevronUp, ChevronDown, Upload, ImagePlus } from 'lucide-react';
 import BlockItem from './components/BlockItem';
+import OperatorBlock from './components/OperatorBlock';
 import clsx from 'clsx';
 import { useSegmentacion } from '@/features/bloques/hooks/UseSegmentacion';
 
-const AVAILABLE_BLOCKS = [
-    // Reducción de Ruido
-    { id: 'nl_means', name: 'Filtro NL Means', name_api: 'nl_means', info: 'Reduce el ruido de la imagen preservando los bordes finos buscando patrones similares.', type: 'filtro' },
-    { id: 'bilateral_filter', name: 'Filtro Bilateral', name_api: 'bilateral_filter', info: 'Suaviza la imagen reduciendo el ruido mientras mantiene los bordes definidos y nítidos.', type: 'filtro' },
-    { id: 'gaussian_filter', name: 'Filtro Gaussiano', name_api: 'gaussian_filter', info: 'Aplica un desenfoque general para difuminar detalles de alta frecuencia y remover ruido común.', type: 'filtro' },
-    // Extracción de Máscara
-    { id: 'connect_comp', name: 'Componentes Conectados', name_api: 'connect_comp', info: 'Agrupa y clasifica las áreas de píxeles interconectados en una imagen binaria.', type: 'filtro' },
-    { id: 'morph_connect', name: 'Conexión Morfológica', name_api: 'morph_connect', info: 'Utiliza operaciones morfológicas (como cierre) para rellenar huecos y unificar estructuras separadas.', type: 'filtro' },
-    // Iluminación y Contraste
-    { id: 'clahe', name: 'Ecualización CLAHE', name_api: 'clahe', info: 'Mejora el contraste a nivel local distribuyendo inteligentemente las zonas muy claras u oscuras.', type: 'filtro' },
-    { id: 'log_gamma', name: 'Corrección Gamma', name_api: 'log_gamma', info: 'Ajusta el nivel de luminancia general aplicando una curva exponencial a los píxeles.', type: 'filtro' },
-    { id: 'min_max', name: 'Normalización Min-Max', name_api: 'min_max', info: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', type: 'filtro' },
-    // Detección de Bordes
-    { id: 'canny_edges', name: 'Bordes de Canny', name_api: 'canny_edges', info: 'Algoritmo multicapa para detectar y trazar contornos precisos e ininterrumpidos.', type: 'filtro' },
-    { id: 'otsu_threshold', name: 'Umbral de Otsu', name_api: 'otsu_threshold', info: 'Binariza automáticamente la imagen analizando su histograma para separar el objeto del fondo.', type: 'filtro' },
-    // Mejora de Detalles
-    { id: 'laplacian', name: 'Filtro Laplaciano', name_api: 'laplacian', info: 'Resalta dramáticamente las texturas y contornos calculando la segunda derivada espacial.', type: 'filtro' },
-    { id: 'unsharp_mask', name: 'Máscara de Desenfoque', name_api: 'unsharp_mask', info: 'Aumenta significativamente la nitidez aparente restando una versión difuminada al original.', type: 'filtro' },
-    { id: 'tophat_morf', name: 'Top-Hat Morfológico', name_api: 'tophat_morf', info: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.', type: 'filtro' },
+// Catálogo agrupado por categoría para el panel izquierdo
+const FILTER_SECTIONS = [
+    {
+        label: 'Reducción de Ruido',
+        color: 'text-blue-400',
+        border: 'border-blue-500/20',
+        blocks: [
+            { id: 'nl_means',        name: 'Filtro NL Means',       name_api: 'nl_means',        info: 'Reduce el ruido de la imagen preservando los bordes finos buscando patrones similares.',                                       type: 'filtro' },
+            { id: 'bilateral_filter',name: 'Filtro Bilateral',       name_api: 'bilateral_filter',info: 'Suaviza la imagen reduciendo el ruido mientras mantiene los bordes definidos y nítidos.',                                       type: 'filtro' },
+            { id: 'gaussian_filter', name: 'Filtro Gaussiano',       name_api: 'gaussian_filter', info: 'Aplica un desenfoque general para difuminar detalles de alta frecuencia y remover ruido común.',                              type: 'filtro' },
+        ],
+    },
+    {
+        label: 'Iluminación y Contraste',
+        color: 'text-yellow-400',
+        border: 'border-yellow-500/20',
+        blocks: [
+            { id: 'log_gamma',       name: 'Corrección Gamma',        name_api: 'log_gamma',       info: 'Ajusta el nivel de luminancia general aplicando una curva exponencial a los píxeles.',                                         type: 'filtro' },
+            { id: 'min_max',         name: 'Normalización Min-Max',   name_api: 'min_max',         info: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.',           type: 'filtro' },
+            { id: 'clahe',           name: 'Ecualización CLAHE',      name_api: 'clahe',           info: 'Mejora el contraste a nivel local distribuyendo inteligentemente las zonas muy claras u oscuras.',                              type: 'filtro' },
+            { id: 'global_hist_eq',  name: 'Ecualización Global',     name_api: 'global_hist_eq',  info: 'Aplica ecualización de histograma a toda la imagen para mejorar el contraste global.',                                        type: 'filtro' },
+            { id: 'local_statistical',name: 'Estadístico Local',      name_api: 'local_statistical',info: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.',                                        type: 'filtro' },
+            { id: 'fuzzy_logic',     name: 'Lógica Difusa',           name_api: 'fuzzy_logic',     info: 'Aplica funciones de membresía difusa para diferenciar píxeles oscuros/ruidosos del tejido real.',                             type: 'filtro' },
+        ],
+    },
+    {
+        label: 'Mejora de Detalles',
+        color: 'text-orange-400',
+        border: 'border-orange-500/20',
+        blocks: [
+            { id: 'tophat_morf',    name: 'Top-Hat Morfológico',      name_api: 'tophat_morf',    info: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.',                                   type: 'filtro' },
+            { id: 'unsharp_mask',   name: 'Máscara de Desenfoque',    name_api: 'unsharp_mask',   info: 'Aumenta significativamente la nitidez aparente restando una versión difuminada al original.',                                   type: 'filtro' },
+            { id: 'laplacian',      name: 'Filtro Laplaciano',         name_api: 'laplacian',      info: 'Resalta dramáticamente las texturas y contornos calculando la segunda derivada espacial.',                                     type: 'filtro' },
+        ],
+    },
+    {
+        label: 'Detección de Bordes',
+        color: 'text-red-400',
+        border: 'border-red-500/20',
+        blocks: [
+            { id: 'otsu_threshold', name: 'Umbral de Otsu',            name_api: 'otsu_threshold', info: 'Binariza automáticamente la imagen analizando su histograma para separar el objeto del fondo.',                               type: 'filtro' },
+            { id: 'canny_edges',    name: 'Bordes de Canny',           name_api: 'canny_edges',    info: 'Algoritmo multicapa para detectar y trazar contornos precisos e ininterrumpidos.',                                             type: 'filtro' },
+        ],
+    },
+    {
+        label: 'Extracción de Máscara',
+        color: 'text-cyan-400',
+        border: 'border-cyan-500/20',
+        blocks: [
+            { id: 'morph_connect',  name: 'Conexión Morfológica',      name_api: 'morph_connect',  info: 'Utiliza operaciones morfológicas (como cierre) para rellenar huecos y unificar estructuras separadas.',                       type: 'filtro' },
+            { id: 'connect_comp',   name: 'Componentes Conectados',    name_api: 'connect_comp',   info: 'Agrupa y clasifica las áreas de píxeles interconectados en una imagen binaria.',                                               type: 'filtro' },
+        ],
+    },
 ];
+
+// Lista plana usada internamente para drag-and-drop y búsquedas
+const AVAILABLE_BLOCKS = FILTER_SECTIONS.flatMap((s) => s.blocks);
 
 const OPERATOR_BLOCKS = [
     // Operaciones Lógicas
-    { id: 'logic_and', name: 'Intersección (AND)', name_api: 'logic_and', info: 'Retiene únicamente los datos activos simultáneamente en ambos sub-procesos.', type: 'operador' },
-    { id: 'logic_or', name: 'Unión (OR)', name_api: 'logic_or', info: 'Combina directamente y superpone cualquier dato detectado en los sub-procesos anteriores.', type: 'operador' },
+    { id: 'logic_and', name: 'Intersección (AND)', name_api: 'logic_and', params: {}, info: 'Retiene únicamente los datos activos simultáneamente en ambos sub-procesos.', type: 'operador' },
+    { id: 'logic_or', name: 'Unión (OR)', name_api: 'logic_or', params: {}, info: 'Combina directamente y superpone cualquier dato detectado en los sub-procesos anteriores.', type: 'operador' },
 ];
+
+// Orden clínico basado en views2.py — MedicalDiagnosticPipeline
+const buildDefaultPipeline = () => {
+    const ts = Date.now();
+    return [
+        { id: 'nl_means', name: 'Filtro NL Means', name_api: 'nl_means', info: 'Reduce el ruido de la imagen preservando los bordes finos buscando patrones similares.', type: 'filtro', params: {}, uniqueId: `nl_means-${ts}-1` },
+        { id: 'log_gamma', name: 'Corrección Gamma', name_api: 'log_gamma', info: 'Ajusta el nivel de luminancia general aplicando una curva exponencial a los píxeles.', type: 'filtro', params: {}, uniqueId: `log_gamma-${ts}-2` },
+        { id: 'min_max', name: 'Normalización Min-Max', name_api: 'min_max', info: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', type: 'filtro', params: {}, uniqueId: `min_max-${ts}-3` },
+        { id: 'clahe', name: 'Ecualización CLAHE', name_api: 'clahe', info: 'Mejora el contraste a nivel local distribuyendo inteligentemente las zonas muy claras u oscuras.', type: 'filtro', params: {}, uniqueId: `clahe-${ts}-4` },
+        { id: 'tophat_morf', name: 'Top-Hat Morfológico', name_api: 'tophat_morf', info: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.', type: 'filtro', params: {}, uniqueId: `tophat_morf-${ts}-5` },
+        { id: 'unsharp_mask', name: 'Máscara de Desenfoque', name_api: 'unsharp_mask', info: 'Aumenta significativamente la nitidez aparente restando una versión difuminada al original.', type: 'filtro', params: {}, uniqueId: `unsharp_mask-${ts}-6` },
+        { id: 'laplacian', name: 'Filtro Laplaciano', name_api: 'laplacian', info: 'Resalta dramáticamente las texturas y contornos calculando la segunda derivada espacial.', type: 'filtro', params: {}, uniqueId: `laplacian-${ts}-7` },
+        { id: 'otsu_threshold', name: 'Umbral de Otsu', name_api: 'otsu_threshold', info: 'Binariza automáticamente la imagen analizando su histograma para separar el objeto del fondo.', type: 'filtro', params: {}, uniqueId: `otsu_threshold-${ts}-8` },
+        { id: 'canny_edges', name: 'Bordes de Canny', name_api: 'canny_edges', info: 'Algoritmo multicapa para detectar y trazar contornos precisos e ininterrumpidos.', type: 'filtro', params: {}, uniqueId: `canny_edges-${ts}-9` },
+        { id: 'logic_or', name: 'Unión (OR)', name_api: 'logic_or', info: 'Combina directamente y superpone cualquier dato detectado en los sub-procesos anteriores.', type: 'operador', params: { layer_a: 'otsu_threshold', layer_b: 'canny_edges' }, uniqueId: `logic_or-${ts}-10` },
+        { id: 'morph_connect', name: 'Conexión Morfológica', name_api: 'morph_connect', info: 'Utiliza operaciones morfológicas (como cierre) para rellenar huecos y unificar estructuras separadas.', type: 'filtro', params: {}, uniqueId: `morph_connect-${ts}-11` },
+        { id: 'connect_comp', name: 'Componentes Conectados', name_api: 'connect_comp', info: 'Agrupa y clasifica las áreas de píxeles interconectados en una imagen binaria.', type: 'filtro', params: { original_layer_name: 'laplacian' }, uniqueId: `connect_comp-${ts}-12` },
+    ];
+};
 
 export default function Bloques() {
     const { postSegmentacion, segmentacionData, loading, error } = useSegmentacion();
-
+    const [image, setImage] = useState(null);
     const [pipeline, setPipeline] = useState([]);
     const [isDragOver, setIsDragOver] = useState(false);
     const [activeTab, setActiveTab] = useState('filtros');
@@ -46,8 +103,23 @@ export default function Bloques() {
     }, []);
 
     const postImage = async () => {
-        const res = await postSegmentacion(baseImage, pipeline);
-        console.log(res);
+        try {
+            const res = await postSegmentacion(baseImage, pipeline);
+            if (res && res.historial) {
+                const newImages = res.historial.map((item, index) => {
+                    return {
+                        id: index,
+                        name: item.nombre_filtro,
+                        url: item.url,
+                    }
+                });
+                setImage(newImages);
+                setIsGenerated(true); // Se marca generado SOLO cuando hay imágenes
+            }
+        } catch (err) {
+            console.error("Error al generar", err);
+            // Maneja error si deseas
+        }
     }
 
     // Novedades: Imagen base
@@ -60,7 +132,7 @@ export default function Bloques() {
         if (file) {
             setBaseImage(file);
             setShowWarning(false);
-            setIsGenerated(false); // Reset earlier generation if image changes
+            setIsGenerated(false);
         }
     };
 
@@ -98,8 +170,29 @@ export default function Bloques() {
         }
     };
 
+    const loadDefaultPipeline = () => {
+        if (!baseImage) {
+            setShowWarning(true);
+            setTimeout(() => setShowWarning(false), 2500);
+            return;
+        }
+        setPipeline(buildDefaultPipeline());
+        setIsGenerated(false);
+        setImage(null);
+    };
+
     const removeBlock = (uniqueId) => {
         setPipeline((prev) => prev.filter((b) => b.uniqueId !== uniqueId));
+        setIsGenerated(false);
+    };
+
+    // Actualiza los params de un bloque específico (usada por los Dropdowns de operadores)
+    const updateBlockParams = (uniqueId, newParams) => {
+        setPipeline((prev) =>
+            prev.map((b) =>
+                b.uniqueId === uniqueId ? { ...b, params: { ...b.params, ...newParams } } : b
+            )
+        );
         setIsGenerated(false);
     };
 
@@ -120,10 +213,25 @@ export default function Bloques() {
     };
 
     const handleGenerate = () => {
-        if (pipeline.length > 0) {
-            postImage();
-            setIsGenerated(true);
+        if (pipeline.length === 0 || loading) return;
+
+        // Validar operadores sin capas configuradas
+        const operadorSinConfig = pipeline.find(
+            (b) => b.type === 'operador' && (!b.params?.layer_a || !b.params?.layer_b)
+        );
+        if (operadorSinConfig) {
+            alert(`El operador "${operadorSinConfig.name}" necesita que selecciones las dos capas a fusionar antes de generar.`);
+            return;
         }
+
+        // Validar que connect_comp tenga la capa de textura seleccionada
+        const connectComp = pipeline.find((b) => b.name_api === 'connect_comp');
+        if (connectComp && !connectComp.params?.original_layer_name) {
+            alert('El filtro "Componentes Conectados" necesita que elijas la capa de textura (pasa el cursor encima y despliega la tarjeta).');
+            return;
+        }
+
+        postImage();
     };
 
     const currentList = activeTab === 'filtros' ? AVAILABLE_BLOCKS : OPERATOR_BLOCKS;
@@ -140,15 +248,23 @@ export default function Bloques() {
 
                 <button
                     className={clsx(
-                        "flex items-center gap-2 px-6 py-2.5 text-white rounded-xl font-medium shadow-lg transition-all duration-200 active:scale-95",
-                        isGenerated
+                        "flex items-center gap-2 px-6 py-2.5 text-white rounded-xl font-medium shadow-lg transition-all duration-200",
+                        loading && "opacity-70 cursor-wait bg-blue-500",
+                        isGenerated && !loading
                             ? "bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30 shadow-green-500/10 cursor-default"
-                            : "bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 shadow-blue-500/25"
+                            : !loading ? "bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 shadow-blue-500/25 active:scale-95" : ""
                     )}
                     onClick={handleGenerate}
+                    disabled={loading}
                 >
-                    {isGenerated ? <CheckCircle size={18} /> : <Play size={18} className="fill-white/80" />}
-                    <span>{isGenerated ? "Generado" : "Generar Secuencia"}</span>
+                    {loading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : isGenerated ? (
+                        <CheckCircle size={18} />
+                    ) : (
+                        <Play size={18} className="fill-white/80" />
+                    )}
+                    <span>{loading ? "Procesando..." : isGenerated ? "Generado" : "Generar Secuencia"}</span>
                 </button>
             </div>
 
@@ -176,15 +292,51 @@ export default function Bloques() {
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                        {currentList.map((block) => (
-                            <div key={block.id} className="relative hover:z-[100] transition-all">
-                                <BlockItem
-                                    item={block}
-                                    onDragStart={handleDragStart}
-                                />
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                        {activeTab === 'filtros' ? (
+                            // Render agrupado por categorías
+                            <div className="space-y-4">
+                                {FILTER_SECTIONS.map((section) => (
+                                    <div key={section.label}>
+                                        {/* Encabezado de categoría */}
+                                        <div className={clsx(
+                                            "flex items-center gap-2 px-1 mb-2 pb-1 border-b",
+                                            section.border
+                                        )}>
+                                            <span className={clsx("text-[10px] font-bold uppercase tracking-widest", section.color)}>
+                                                {section.label}
+                                            </span>
+                                            <span className="text-[10px] text-text-secondary/50 ml-auto">
+                                                {section.blocks.length}
+                                            </span>
+                                        </div>
+                                        {/* Bloques de esa categoría */}
+                                        <div className="space-y-2">
+                                            {section.blocks.map((block) => (
+                                                <div key={block.id} className="relative hover:z-[100] transition-all">
+                                                    <BlockItem
+                                                        item={block}
+                                                        onDragStart={handleDragStart}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        ) : (
+                            // Render plano para operadores
+                            <div className="space-y-3">
+                                {OPERATOR_BLOCKS.map((block) => (
+                                    <div key={block.id} className="relative hover:z-[100] transition-all">
+                                        <BlockItem
+                                            item={block}
+                                            onDragStart={handleDragStart}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -200,14 +352,26 @@ export default function Bloques() {
                             )}
                         </h2>
 
-                        {pipeline.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            {/* Botón Orden Clínico por defecto */}
                             <button
-                                onClick={() => { setPipeline([]); setIsGenerated(false); }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 transition-all active:scale-95 shrink-0"
+                                onClick={loadDefaultPipeline}
+                                title="Carga el orden clínico basado en MedicalDiagnosticPipeline (views2.py)"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg border border-blue-500/20 transition-all active:scale-95 shrink-0"
                             >
-                                <Trash2 size={14} /> Limpiar Todas las Capas
+                                <Cpu size={14} />
+                                Orden Clínico
                             </button>
-                        )}
+
+                            {pipeline.length > 0 && (
+                                <button
+                                    onClick={() => { setPipeline([]); setIsGenerated(false); }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 transition-all active:scale-95 shrink-0"
+                                >
+                                    <Trash2 size={14} /> Limpiar Todas las Capas
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div
@@ -314,27 +478,15 @@ export default function Bloques() {
                                 return (
                                     <div key={block.uniqueId} className="flex flex-col group relative hover:z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
                                         {isOperator ? (
-                                            <div className="flex items-center justify-center my-1 relative z-10 w-full ml-10">
-                                                <div className={clsx(
-                                                    "px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-widest shadow-lg backdrop-blur-md border flex items-center justify-center w-20 text-center transition-all duration-300",
-                                                    isGenerated
-                                                        ? "bg-green-500/20 text-green-300 border-green-500/40 shadow-[0_0_15px_-3px_rgba(34,197,94,0.3)]"
-                                                        : "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                                                )}>
-                                                    {block.name}
-                                                </div>
-
-                                                {/* Wrapper for Delete Actions */}
-                                                <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all mr-14">
-                                                    <button
-                                                        onClick={() => removeBlock(block.uniqueId)}
-                                                        className="p-1.5 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-lg shrink-0 transition-colors"
-                                                        title="Eliminar operador"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            <OperatorBlock
+                                                block={block}
+                                                index={index}
+                                                pipeline={pipeline}
+                                                isGenerated={isGenerated}
+                                                resultImage={image && image[index + 1] ? image[index + 1].url : null}
+                                                onRemove={removeBlock}
+                                                onParamsChange={updateBlockParams}
+                                            />
                                         ) : (
                                             <div className="flex items-center gap-4 relative">
                                                 {/* Step Indicator */}
@@ -354,6 +506,10 @@ export default function Bloques() {
                                                         isDraggable={false}
                                                         isPipelineBlock={true}
                                                         isGenerated={isGenerated}
+                                                        resultImage={image && image[index + 1] ? image[index + 1].url : null}
+                                                        pipeline={pipeline}
+                                                        blockIndex={index}
+                                                        onParamsChange={updateBlockParams}
                                                     />
                                                 </div>
 
@@ -443,7 +599,7 @@ export default function Bloques() {
                 </div>
 
                 {/* Panel derecho adicional: Vista Previa Final (aparece al Generar) */}
-                {isGenerated && (
+                {isGenerated && image && image.length > 0 && (
                     <div className="w-[380px] flex flex-col glass-panel rounded-3xl p-5 border border-white/10 shrink-0 animate-in slide-in-from-right-8 duration-500 fade-in">
                         <h2 className="text-lg font-semibold mb-4 text-text-primary flex items-center gap-2">
                             Resultado Generado
@@ -451,8 +607,13 @@ export default function Bloques() {
                         </h2>
 
                         <div className="flex-1 bg-black/60 rounded-2xl border border-white/10 overflow-hidden relative group">
-                            <img
+                            {/* <img
                                 src="https://images.unsplash.com/photo-1530497610245-94d3c16cda28?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                                alt="Imagen procesada"
+                                className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+                            /> */}
+                            <img
+                                src={image[image.length - 1].url}
                                 alt="Imagen procesada"
                                 className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
                             />
@@ -500,7 +661,7 @@ export default function Bloques() {
                         {/* Contenido de la Imagen */}
                         <div className="flex-1 overflow-hidden p-6 bg-black/40 flex items-center justify-center dashboard-pattern">
                             <img
-                                src="https://images.unsplash.com/photo-1530497610245-94d3c16cda28?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+                                src={image && image.length > 0 ? image[image.length - 1].url : ""}
                                 alt="Vista expandida de la segmentación"
                                 className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-white/10"
                             />
