@@ -60,7 +60,8 @@ export const OPERATOR_TYPES = {
         label: 'Resultado Final',
         color: 'purple',
         items: [
-            { name: 'connect_comp', label: 'Connect Components', desc: 'Limpia artefactos y extrae el tumor final.', params: { min_size_pct: 0.015 } }
+            { name: 'mass_cleaning', label: 'Limpieza de Masa', desc: 'Limpia artefactos y extrae el tumor final.', params: { min_size_pct: 0.015 } },
+            { name: 'mask_clipping', label: 'Recorte de Máscara', desc: 'Recorta la máscara de la imagen original.', params: { min_size_pct: 0.015 } },
         ]
     }
 };

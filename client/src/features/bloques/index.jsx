@@ -56,7 +56,8 @@ const FILTER_SECTIONS = [
         border: 'border-cyan-500/20',
         blocks: [
             { id: 'morph_connect', name: 'Conexión Morfológica', name_api: 'morph_connect', info: 'Utiliza operaciones morfológicas (como cierre) para rellenar huecos y unificar estructuras separadas.', type: 'filtro' },
-            { id: 'connect_comp', name: 'Componentes Conectados', name_api: 'connect_comp', info: 'Agrupa y clasifica las áreas de píxeles interconectados en una imagen binaria.', type: 'filtro' },
+            { id: 'mass_cleaning', name: 'Limpieza de Masa', name_api: 'mass_cleaning', info: 'Limpia artefactos y extrae el tumor final.', type: 'filtro' },
+            { id: 'mask_clipping', name: 'Recorte de Máscara', name_api: 'mask_clipping', info: 'Recorta la máscara de la imagen original.', type: 'filtro' },
         ],
     },
 ];
