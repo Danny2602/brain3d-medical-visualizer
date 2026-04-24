@@ -20,5 +20,6 @@ class TopHatMorfFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen con el filtro de tophat morf aplicado.
         """
-        img_filtered = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, (kernel_size, kernel_size))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+        img_filtered = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
         return img_filtered

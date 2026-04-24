@@ -1,5 +1,4 @@
 import numpy as np
-import traceback
 from processing.filters.noise_reduction.nl_means import NlMeansFilter
 from processing.filters.noise_reduction.bilateral import BilateralFilter
 from processing.filters.noise_reduction.gaussian import GaussianFilter
@@ -45,40 +44,24 @@ FILTERS_REGISTRY = {
     "logic_or": LogicOrFilter(),
 }
 
+class MedicalPipelineBuilder2:
+    def __init__(self,init_image: np.ndarray):
+        self.current_image = init_image #La imagen que se va a procesar
+        self.history={}
+    
+    def execute_flow(self, flow_config: list)-> dict:
+        self.history['original'] = self.current_image.copy()
 
-class MedicalPipelineBuilder:
-    def __init__(self, init_image: np.ndarray):
-        self.history = { 'original': init_image.copy() }
-        self.execution_trace = {} # <-- NUEVO: Para guardar qué hizo cada nodo
-    def execute_flow(self, flow_config: list) -> tuple: # <-- CAMBIO: Ahora devuelve una tupla
-        # print(f"\n--- INICIANDO PIPELINE DE NODOS ({len(flow_config)} pasos) ---")
-        
         for step in flow_config:
-            node_id = step.get('id', f"node_{flow_config.index(step)}")
             filter_name = step.get('filter_name')
-            input_id = step.get('input_id', 'original')
-            params = step.get('params', {})
-            # Registro inicial en la traza
-            self.execution_trace[node_id] = {
-                "filter": filter_name,
-                "parent": input_id,
-                "status": "pending"
-            }
+            filter_params = step.get('params',{})
             filter_instance = FILTERS_REGISTRY.get(filter_name)
-            
-            if not filter_instance or input_id not in self.history:
-                self.execution_trace[node_id]["status"] = "error"
-                self.execution_trace[node_id]["error"] = "Origen no encontrado o filtro inválido"
-                continue
-            try:
-                source_img = self.history[input_id]
-                result = filter_instance.apply(source_img, history=self.history, **params)
-                self.history[node_id] = result
-                self.execution_trace[node_id]["status"] = "success"
-                # print(f"ÉXITO en '{node_id}'")
-            except Exception as e:
-                self.execution_trace[node_id]["status"] = "error"
-                self.execution_trace[node_id]["error"] = str(e)
-                # print(f"ERROR en '{node_id}': {str(e)}")
-        # print("--- PIPELINE FINALIZADO ---\n")
-        return self.history, self.execution_trace # <-- DEVOLVEMOS AMBOS
+            if filter_instance:
+                self.current_image = filter_instance.apply(self.current_image, history=self.history, **filter_params)
+                self.history[filter_name] = self.current_image.copy()
+            else:
+                print(f"Filter {filter_name} not found")
+        
+        return self.history
+        
+        
