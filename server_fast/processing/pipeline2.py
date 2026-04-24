@@ -5,7 +5,8 @@ from processing.filters.noise_reduction.gaussian import GaussianFilter
 from processing.filters.mask_extraction.connect_comp import ConnectComponentsFilter
 from processing.filters.mask_extraction.morph_connect import MorphConnectFilter
 from processing.filters.illumination_contrast.clahe import CLAHEFilter
-from processing.filters.illumination_contrast.log_gamma  import LogGammaFilter
+from processing.filters.illumination_contrast.gamma import GammaFilter
+from processing.filters.illumination_contrast.logarithmic import LogarithmicFilter
 from processing.filters.illumination_contrast.min_max import MinMaxFilter
 from processing.filters.illumination_contrast.fuzzy_logic import FuzzyLogicFilter
 from processing.filters.illumination_contrast.local_statistical import LocalStatisticalFilter
@@ -27,7 +28,8 @@ FILTERS_REGISTRY = {
     "morph_connect": MorphConnectFilter(),
     #illumination_contrast
     "clahe": CLAHEFilter(),
-    "log_gamma": LogGammaFilter(),
+    "logarithmic": LogarithmicFilter(),
+    "gamma": GammaFilter(),
     "min_max": MinMaxFilter(),
     "fuzzy_logic": FuzzyLogicFilter(),
     "local_statistical": LocalStatisticalFilter(),
