@@ -20,7 +20,7 @@ export const segmentacion = {
             formData.append('image', image);
             formData.append('flow_config_json', JSON.stringify(data2));
 
-            const response = await api.post('/process-image', formData)
+            const response = await api.post('/process-image-lineal', formData)
             return response.data
         } catch (error) {
             console.error('Error al segmentar:', error)

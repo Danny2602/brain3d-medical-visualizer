@@ -71,6 +71,13 @@ export default function MainLayout({ children }) {
             active={location.pathname === '/bloques'}
             collapsed={collapsed}
           />
+          <SidebarItem
+            icon={LayoutDashboard}
+            label="BloquesFlow"
+            to="/bloquesflow"
+            active={location.pathname === '/bloquesflow'}
+            collapsed={collapsed}
+          />
 
         </nav>
 
