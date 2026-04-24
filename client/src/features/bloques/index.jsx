@@ -12,9 +12,9 @@ const FILTER_SECTIONS = [
         color: 'text-blue-400',
         border: 'border-blue-500/20',
         blocks: [
-            { id: 'nl_means',        name: 'Filtro NL Means',       name_api: 'nl_means',        info: 'Reduce el ruido de la imagen preservando los bordes finos buscando patrones similares.',                                       type: 'filtro' },
-            { id: 'bilateral_filter',name: 'Filtro Bilateral',       name_api: 'bilateral_filter',info: 'Suaviza la imagen reduciendo el ruido mientras mantiene los bordes definidos y nítidos.',                                       type: 'filtro' },
-            { id: 'gaussian_filter', name: 'Filtro Gaussiano',       name_api: 'gaussian_filter', info: 'Aplica un desenfoque general para difuminar detalles de alta frecuencia y remover ruido común.',                              type: 'filtro' },
+            { id: 'nl_means', name: 'Filtro NL Means', name_api: 'nl_means', info: 'Reduce el ruido de la imagen preservando los bordes finos buscando patrones similares.', type: 'filtro' },
+            { id: 'bilateral_filter', name: 'Filtro Bilateral', name_api: 'bilateral_filter', info: 'Suaviza la imagen reduciendo el ruido mientras mantiene los bordes definidos y nítidos.', type: 'filtro' },
+            { id: 'gaussian_filter', name: 'Filtro Gaussiano', name_api: 'gaussian_filter', info: 'Aplica un desenfoque general para difuminar detalles de alta frecuencia y remover ruido común.', type: 'filtro' },
         ],
     },
     {
@@ -22,12 +22,13 @@ const FILTER_SECTIONS = [
         color: 'text-yellow-400',
         border: 'border-yellow-500/20',
         blocks: [
-            { id: 'log_gamma',       name: 'Corrección Gamma',        name_api: 'log_gamma',       info: 'Ajusta el nivel de luminancia general aplicando una curva exponencial a los píxeles.',                                         type: 'filtro' },
-            { id: 'min_max',         name: 'Normalización Min-Max',   name_api: 'min_max',         info: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.',           type: 'filtro' },
-            { id: 'clahe',           name: 'Ecualización CLAHE',      name_api: 'clahe',           info: 'Mejora el contraste a nivel local distribuyendo inteligentemente las zonas muy claras u oscuras.',                              type: 'filtro' },
-            { id: 'global_hist_eq',  name: 'Ecualización Global',     name_api: 'global_hist_eq',  info: 'Aplica ecualización de histograma a toda la imagen para mejorar el contraste global.',                                        type: 'filtro' },
-            { id: 'local_statistical',name: 'Estadístico Local',      name_api: 'local_statistical',info: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.',                                        type: 'filtro' },
-            { id: 'fuzzy_logic',     name: 'Lógica Difusa',           name_api: 'fuzzy_logic',     info: 'Aplica funciones de membresía difusa para diferenciar píxeles oscuros/ruidosos del tejido real.',                             type: 'filtro' },
+            { id: 'logarithmic', name: 'Corrección Logarítmica', name_api: 'logarithmic', info: 'Ajusta el nivel de luminancia general aplicando una curva exponencial a los píxeles.', type: 'filtro' },
+            { id: 'gamma', name: 'Corrección Gamma', name_api: 'gamma', info: 'Ajusta el nivel de luminancia general aplicando una curva exponencial a los píxeles.', type: 'filtro' },
+            { id: 'min_max', name: 'Normalización Min-Max', name_api: 'min_max', info: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', type: 'filtro' },
+            { id: 'clahe', name: 'Ecualización CLAHE', name_api: 'clahe', info: 'Mejora el contraste a nivel local distribuyendo inteligentemente las zonas muy claras u oscuras.', type: 'filtro' },
+            { id: 'global_hist_eq', name: 'Ecualización Global', name_api: 'global_hist_eq', info: 'Aplica ecualización de histograma a toda la imagen para mejorar el contraste global.', type: 'filtro' },
+            { id: 'local_statistical', name: 'Estadístico Local', name_api: 'local_statistical', info: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.', type: 'filtro' },
+            { id: 'fuzzy_logic', name: 'Lógica Difusa', name_api: 'fuzzy_logic', info: 'Aplica funciones de membresía difusa para diferenciar píxeles oscuros/ruidosos del tejido real.', type: 'filtro' },
         ],
     },
     {
@@ -35,9 +36,9 @@ const FILTER_SECTIONS = [
         color: 'text-orange-400',
         border: 'border-orange-500/20',
         blocks: [
-            { id: 'tophat_morf',    name: 'Top-Hat Morfológico',      name_api: 'tophat_morf',    info: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.',                                   type: 'filtro' },
-            { id: 'unsharp_mask',   name: 'Máscara de Desenfoque',    name_api: 'unsharp_mask',   info: 'Aumenta significativamente la nitidez aparente restando una versión difuminada al original.',                                   type: 'filtro' },
-            { id: 'laplacian',      name: 'Filtro Laplaciano',         name_api: 'laplacian',      info: 'Resalta dramáticamente las texturas y contornos calculando la segunda derivada espacial.',                                     type: 'filtro' },
+            { id: 'tophat_morf', name: 'Top-Hat Morfológico', name_api: 'tophat_morf', info: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.', type: 'filtro' },
+            { id: 'unsharp_mask', name: 'Máscara de Desenfoque', name_api: 'unsharp_mask', info: 'Aumenta significativamente la nitidez aparente restando una versión difuminada al original.', type: 'filtro' },
+            { id: 'laplacian', name: 'Filtro Laplaciano', name_api: 'laplacian', info: 'Resalta dramáticamente las texturas y contornos calculando la segunda derivada espacial.', type: 'filtro' },
         ],
     },
     {
@@ -45,8 +46,8 @@ const FILTER_SECTIONS = [
         color: 'text-red-400',
         border: 'border-red-500/20',
         blocks: [
-            { id: 'otsu_threshold', name: 'Umbral de Otsu',            name_api: 'otsu_threshold', info: 'Binariza automáticamente la imagen analizando su histograma para separar el objeto del fondo.',                               type: 'filtro' },
-            { id: 'canny_edges',    name: 'Bordes de Canny',           name_api: 'canny_edges',    info: 'Algoritmo multicapa para detectar y trazar contornos precisos e ininterrumpidos.',                                             type: 'filtro' },
+            { id: 'otsu_threshold', name: 'Umbral de Otsu', name_api: 'otsu_threshold', info: 'Binariza automáticamente la imagen analizando su histograma para separar el objeto del fondo.', type: 'filtro' },
+            { id: 'canny_edges', name: 'Bordes de Canny', name_api: 'canny_edges', info: 'Algoritmo multicapa para detectar y trazar contornos precisos e ininterrumpidos.', type: 'filtro' },
         ],
     },
     {
@@ -54,8 +55,8 @@ const FILTER_SECTIONS = [
         color: 'text-cyan-400',
         border: 'border-cyan-500/20',
         blocks: [
-            { id: 'morph_connect',  name: 'Conexión Morfológica',      name_api: 'morph_connect',  info: 'Utiliza operaciones morfológicas (como cierre) para rellenar huecos y unificar estructuras separadas.',                       type: 'filtro' },
-            { id: 'connect_comp',   name: 'Componentes Conectados',    name_api: 'connect_comp',   info: 'Agrupa y clasifica las áreas de píxeles interconectados en una imagen binaria.',                                               type: 'filtro' },
+            { id: 'morph_connect', name: 'Conexión Morfológica', name_api: 'morph_connect', info: 'Utiliza operaciones morfológicas (como cierre) para rellenar huecos y unificar estructuras separadas.', type: 'filtro' },
+            { id: 'connect_comp', name: 'Componentes Conectados', name_api: 'connect_comp', info: 'Agrupa y clasifica las áreas de píxeles interconectados en una imagen binaria.', type: 'filtro' },
         ],
     },
 ];

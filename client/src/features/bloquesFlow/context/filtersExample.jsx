@@ -4,37 +4,45 @@ export const FILTER_TYPES = {
         color: 'emerald',
         items: [
             { name: 'nl_means', label: 'NL-Means', desc: 'Elimina ruido preservando texturas finas.', params: { h_value: 10 } },
-            { name: 'bilateral_filter', label: 'Bilateral', desc: 'Suaviza sin perder los bordes del tumor.', params: { diameter: 5, sigma_color: 50, sigma_space: 50 } },
-            { name: 'gaussian_filter', label: 'Gaussian Blur', desc: 'Desenfoque suave para eliminar ruido gaussiano.', params: { kernel_size: 5 } },
-            { name: 'median_blur', label: 'Filtro de Mediana', desc: 'Excelente para eliminar ruido de tipo sal y pimienta.', params: { kernel_size: 5 } }
+            { name: 'bilateral_filter', label: 'Filtro Bilateral', desc: 'Suaviza sin perder los bordes del tumor.', params: { diameter: 5, sigma_color: 50, sigma_space: 50 } },
+            { name: 'gaussian_filter', label: 'Filtro Gaussiano', desc: 'Desenfoque suave para eliminar ruido gaussiano.', params: { kernel_size: 5 } },
         ]
     },
     contrast: {
-        label: 'Realce y Contraste',
+        label: 'Iluminación y Contraste',
         color: 'amber',
         items: [
-            { name: 'clahe', label: 'CLAHE', desc: 'Ajuste de contraste local adaptativo.', params: { clipLimit: 2.0, tileGridSize: [8, 8] } },
+            { name: 'logarithmic', label: 'Corrección Logarítmica', desc: 'Corrección no lineal de la iluminación.', params: { mode: 'logarithmic', factor: 1.2 } },
+            { name: 'gamma', label: 'Corrección Gamma', desc: 'Corrección no lineal de la iluminación.', params: { mode: 'gamma', factor: 1.2 } },
+            { name: 'clahe', label: 'Ecualización CLAHE', desc: 'Ajuste de contraste local adaptativo.', params: { clipLimit: 2.0, tileGridSize: [8, 8] } },
+            { name: 'min_max', label: 'Normalización Min-Max', desc: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', params: {} },
+            { name: 'global_hist_eq', label: 'Ecualización Global', desc: 'Aplica ecualización de histograma a toda la imagen para mejorar el contraste global.', params: {} },
+            { name: 'local_statistical', label: 'Estadístico Local', desc: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.', params: {} },
             { name: 'fuzzy_logic', label: 'Fuzzy Logic', desc: 'Realce experto mediante lógica difusa Mamdani.', params: { mode: 'triangular' } },
-            { name: 'log_gamma', label: 'Log/Gamma', desc: 'Corrección no lineal de la iluminación.', params: { mode: 'gamma', factor: 1.2 } },
-            { name: 'normalize', label: 'Normalización', desc: 'Escala los píxeles al rango óptimo 0-255.', params: {} },
-            { name: 'hist_equalize', label: 'Ecualización', desc: 'Ajuste global del histograma de la imagen.', params: {} }
         ]
     },
     edges: {
-        label: 'Segmentación',
+        label: 'Detección de Bordes',
         color: 'rose',
         items: [
             { name: 'canny_edges', label: 'Canny Edges', desc: 'Detecta los contornos de estructuras.', params: { low_threshold: 50, high_threshold: 150 } },
-            { name: 'otsu_threshold', label: 'Otsu Threshold', desc: 'Binarización automática por intensidad.', params: {} },
-            { name: 'adaptive_threshold', label: 'Umbral Adaptativo', desc: 'Binarización basada en regiones locales.', params: { blockSize: 11, C: 2 } }
+            { name: 'otsu_threshold', label: 'Umbral Otsu', desc: 'Binarización automática por intensidad.', params: {} },
         ]
     },
     detail: {
-        label: 'Morfología',
+        label: 'Mejora de Detalles',
         color: 'cyan',
         items: [
-            { name: 'tophat_morf', label: 'Top-Hat', desc: 'Resalta objetos pequeños brillantes sobre fondo oscuro.', params: { kernel_size: 15 } },
-            { name: 'morph_connect', label: 'Cierre Morfológico', desc: 'Une puntos cercanos y rellena huecos en la máscara.', params: { kernel_size: 5 } }
+            { name: 'tophat_morf', label: 'Top-Hat Morfológico', desc: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.', params: { kernel_size: 15 } },
+            { name: 'unsharp_mask', label: 'Máscara de Desenfoque', desc: 'Aumenta la nitidez aparente restando una versión difuminada al original.', params: { ksize: 5 } },
+            { name: 'laplacian', label: 'Laplaciano', desc: 'Resalta texturas y contornos calculando la segunda derivada espacial.', params: {} },
+        ]
+    },
+    segmentacion: {
+        label: 'Extracción de Máscara',
+        color: 'cyan',
+        items: [
+            { name: 'morph_connect', label: 'Conexión Morfológica', desc: 'Une píxeles interconectados para formar regiones completas.', params: { kernel_size: 5 } },
         ]
     }
 };

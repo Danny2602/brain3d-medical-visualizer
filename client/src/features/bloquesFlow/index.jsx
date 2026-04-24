@@ -178,7 +178,7 @@ function FlowContent() {
                     fitView
                 >
                     <Background color="#1e293b" gap={25} variant="dots" />
-                    <Controls position="bottom-right" className="!bg-slate-900 !border-slate-800 !shadow-2xl !fill-white" />
+                    <Controls position="bottom-right" className=" !shadow-2xl !fill-black !text-black" />
                 </ReactFlow>
             </div>
 
