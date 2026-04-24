@@ -3,7 +3,8 @@ import traceback
 from processing.filters.noise_reduction.nl_means import NlMeansFilter
 from processing.filters.noise_reduction.bilateral import BilateralFilter
 from processing.filters.noise_reduction.gaussian import GaussianFilter
-from processing.filters.mask_extraction.connect_comp import ConnectComponentsFilter
+from processing.filters.mask_extraction.mass_cleaning import MassCleaningFilter
+from processing.filters.mask_extraction.mask_clipping import MaskClippingFilter
 from processing.filters.mask_extraction.morph_connect import MorphConnectFilter
 from processing.filters.illumination_contrast.clahe import CLAHEFilter
 from processing.filters.illumination_contrast.gamma import GammaFilter
@@ -25,7 +26,8 @@ FILTERS_REGISTRY = {
     "bilateral_filter": BilateralFilter(),
     "gaussian_filter": GaussianFilter(),
     #mask_extraction
-    "connect_comp": ConnectComponentsFilter(),
+    "mass_cleaning": MassCleaningFilter(),
+    "mask_clipping": MaskClippingFilter(),
     "morph_connect": MorphConnectFilter(),
     #illumination_contrast
     "clahe": CLAHEFilter(),

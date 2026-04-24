@@ -20,7 +20,7 @@ class MorphConnectFilter(BaseFilter):
         """
         #kernel con vecinos de nxn
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-        img_filtered = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+        img_filtered = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
 
 
