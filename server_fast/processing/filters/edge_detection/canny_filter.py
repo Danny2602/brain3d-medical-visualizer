@@ -20,5 +20,10 @@ class CannyEdgesFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen con los bordes detectados.
         """
+        # v=np.median(img)
+        # lower=int(max(0,(1.0-sigma)*v))
+        # upper=int(min(255,(1.0+sigma)*v))
+
+        # edges = cv2.Canny(img, lower, upper)
         edges = cv2.Canny(img, low_threshold, high_threshold)
         return edges
