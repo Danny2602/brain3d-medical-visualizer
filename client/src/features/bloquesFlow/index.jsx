@@ -27,12 +27,11 @@ function FlowContent() {
     const reactFlowWrapper = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeTab, setActiveTab] = useState('filters');
-    const [expandedImage, setExpandedImage] = useState(null); // Estado para el modal
+    const [expandedImage, setExpandedImage] = useState(null);
 
     const { screenToFlowPosition } = useReactFlow();
     const { ejecutarProcesamiento, loading, error } = useSegmentacion();
 
-    // Función para expandir imágenes que pasamos a los nodos
     const onNodeExpand = (url) => setExpandedImage(url);
 
     const [nodes, setNodes] = useState([
@@ -44,7 +43,7 @@ function FlowContent() {
                 onImageSelect: (file) => setSelectedFile(file),
                 onExpand: onNodeExpand
             },
-            position: { x: 300, y: 50 }, // Empezamos centrado arriba
+            position: { x: 300, y: 50 },
         },
     ]);
     const [edges, setEdges] = useState([]);
@@ -80,7 +79,8 @@ function FlowContent() {
                 filterName: filter.name,
                 params: filter.params,
                 resultUrl: null,
-                onExpand: onNodeExpand // Inyectamos la función al nuevo nodo
+                processing: false,
+                onExpand: onNodeExpand
             },
         };
         setNodes((nds) => nds.concat(newNode));
@@ -89,19 +89,28 @@ function FlowContent() {
     const handleProcess = async () => {
         if (!selectedFile) return;
 
+        // Marcamos todos los nodos como "en proceso"
+        setNodes(nds => nds.map(n => n.id !== 'original' ? { ...n, data: { ...n.data, processing: true } } : n));
+
         const flowConfig = nodes
             .filter(n => n.id !== 'original')
+            .filter(n => edges.some(e => e.target === n.id))
             .map(node => {
                 const incomingEdges = edges.filter(e => e.target === node.id);
                 const stepParams = { ...node.data.params };
-                if (incomingEdges.length > 1) {
-                    stepParams.layer_a = incomingEdges[0].source;
-                    stepParams.layer_b = incomingEdges[1].source;
-                }
+
+                // LÓGICA DE PUERTOS: layer_a (Textura) y layer_b (Máscara)
+                const edgeA = incomingEdges.find(e => e.targetHandle === 'a');
+                const edgeB = incomingEdges.find(e => e.targetHandle === 'b');
+
+                if (edgeA) stepParams.layer_a = edgeA.source;
+                if (edgeB) stepParams.layer_b = edgeB.source;
+
                 return {
                     id: node.id,
                     filter_name: node.data.filterName,
-                    input_id: incomingEdges.length > 0 ? incomingEdges[0].source : 'original',
+                    // Si no hay puerto 'a' explícito, usamos la primera conexión o la original
+                    input_id: edgeA ? edgeA.source : (incomingEdges[0]?.source || 'original'),
                     params: stepParams
                 };
             });
@@ -111,11 +120,21 @@ function FlowContent() {
         if (res && res.nodos) {
             setNodes((nds) => nds.map((node) => {
                 const nodeResult = res.nodos.find(n => n.id === node.id);
-                if (nodeResult && nodeResult.url) {
-                    return { ...node, data: { ...node.data, resultUrl: nodeResult.url } };
+                if (nodeResult) {
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            resultUrl: nodeResult.url || node.data.resultUrl,
+                            processing: false
+                        }
+                    };
                 }
-                return node;
+                return { ...node, data: { ...node.data, processing: false } };
             }));
+        } else {
+            // Si hay error, quitamos los loaders
+            setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, processing: false } })));
         }
     };
 
@@ -182,7 +201,7 @@ function FlowContent() {
                 </ReactFlow>
             </div>
 
-            {/* MODAL DE IMAGEN EXPANDIDA (PORTAL-LIKE) */}
+            {/* MODAL DE IMAGEN EXPANDIDA */}
             {expandedImage && (
                 <div
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-10 animate-in fade-in duration-300"
