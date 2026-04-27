@@ -76,9 +76,21 @@ class MedicalPipelineBuilder:
                 node_id = step.get('id')
                 input_id = step.get('input_id', 'original')
                 params = step.get('params', {})
+
                 
-                # Recopilar todas las dependencias del nodo
-                # Un nodo depende de su input_id y opcionalmente de layer_a/layer_b (operadores)
+                for key, value in params.items():
+                    if isinstance(value, str):
+                        try:
+                            # Si es un número con decimal (ej. "10.5"), lo pasamos a float
+                            if '.' in value:
+                                params[key] = float(value)
+                            # Si es un número entero (ej. "10"), lo pasamos a int
+                            else:
+                                params[key] = int(value)
+                        except ValueError:
+                            # Si no se puede convertir, lo dejamos como string (ej. "gray")
+                            pass
+                
                 deps_to_check = [input_id]
                 if 'layer_a' in params: deps_to_check.append(params['layer_a'])
                 if 'layer_b' in params: deps_to_check.append(params['layer_b'])

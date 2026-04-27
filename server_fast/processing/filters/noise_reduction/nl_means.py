@@ -19,5 +19,7 @@ class NlMeansFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen filtrada.
         """
+        
+        
         denoised = cv2.fastNlMeansDenoising(img, None, h=h_value, templateWindowSize=7, searchWindowSize=21)
         return denoised
