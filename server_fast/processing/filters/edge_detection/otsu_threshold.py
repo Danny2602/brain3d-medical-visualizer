@@ -24,6 +24,7 @@ class OtsuThresholdFilter(BaseFilter):
         if len(img.shape) == 3:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+        # Para tumores sólidos grandes, el Otsu Global es mejor que el Adaptativo.
         _, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return thresh
         # thresholds = thresholding.threshold_multiotsu(img, classes=classes)

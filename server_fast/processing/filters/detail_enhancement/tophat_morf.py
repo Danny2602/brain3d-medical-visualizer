@@ -8,7 +8,7 @@ import numpy as np
 from processing.base import BaseFilter
 
 class TopHatMorfFilter(BaseFilter):
-    def apply(self, img: np.ndarray, kernel_size: int = 3, **kwargs)->np.ndarray:
+    def apply(self, img: np.ndarray, kernel_size: int = 100, **kwargs)->np.ndarray:
         """
         Aplica el filtro de tophat morf a la imagen.
         

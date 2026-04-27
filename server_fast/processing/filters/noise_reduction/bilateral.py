@@ -7,7 +7,7 @@ import numpy as np
 from processing.base import BaseFilter
 
 class BilateralFilter(BaseFilter):
-    def apply(self, img: np.ndarray, diameter: int = 5, sigma_color: int = 50, sigma_space: int = 50, **kwargs)->np.ndarray:
+    def apply(self, img: np.ndarray, diameter: int = 9, sigma_color: int = 75, sigma_space: int = 75, **kwargs)->np.ndarray:
         """
         Aplica el filtro gaussiano.
         

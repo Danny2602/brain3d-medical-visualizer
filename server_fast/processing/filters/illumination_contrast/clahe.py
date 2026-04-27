@@ -21,6 +21,24 @@ class CLAHEFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen con el filtro de CLAHE aplicado.
         """
+        # 1. CLAHE requiere que la imagen sea de 8 bits (uint8)
+        if img.dtype != np.uint8:
+            if img.dtype in [np.float32, np.float64]:
+                img = (img * 255).astype(np.uint8) if img.max() <= 1.0 else img.astype(np.uint8)
+            else:
+                img = img.astype(np.uint8)
+                
         clahe = cv2.createCLAHE(clipLimit=clipLimit, tileGridSize=tileGridSize)
-        img_filtered = clahe.apply(img)
+        
+        # 2. Si la imagen es a color (3 canales), aplicar solo al canal L (Luminancia)
+        # para no arruinar o alterar los verdaderos colores anatómicos.
+        if len(img.shape) == 3 and img.shape[2] == 3:
+            lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            l_clahe = clahe.apply(l)
+            merged = cv2.merge((l_clahe, a, b))
+            img_filtered = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
+        else:
+            img_filtered = clahe.apply(img)
+            
         return img_filtered
