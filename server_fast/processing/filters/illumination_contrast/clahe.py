@@ -21,6 +21,11 @@ class CLAHEFilter(BaseFilter):
         Returns:
             np.ndarray: Imagen con el filtro de CLAHE aplicado.
         """
+        if isinstance(clipLimit, str):
+            clipLimit = float(clipLimit)
+        if isinstance(tileGridSize, str):
+            tileGridSize = tuple(map(int, tileGridSize.split(',')))
+        
         # 1. CLAHE requiere que la imagen sea de 8 bits (uint8)
         if img.dtype != np.uint8:
             if img.dtype in [np.float32, np.float64]:

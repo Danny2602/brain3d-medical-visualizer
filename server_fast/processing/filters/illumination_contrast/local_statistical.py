@@ -13,7 +13,7 @@ class LocalStatisticalFilter(BaseFilter):
     iluminar áreas oscuras sin sobreexponer las áreas ya brillantes.
     """
     
-    def apply(self, img: np.ndarray, history: dict = None, kernel_size: int = 15, k_factor: float = 2.0, **kwargs) -> np.ndarray:
+    def apply(self, img: np.ndarray, kernel_size: int = 15, k_factor: float = 2.0, **kwargs) -> np.ndarray:
         """
         Args:
             kernel_size: El tamaño de la "vecindad" estadística a estudiar (Ej. 15x15 píxeles).
