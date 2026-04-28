@@ -11,6 +11,19 @@ class MassCleaningFilter(BaseFilter):
     basándose en su área relativa.
     """
     def apply(self, img: np.ndarray, min_size_pct: float = 0.015, keep_largest_only: bool = True, **kwargs) -> np.ndarray:
+        """
+        Aplica el filtro de limpieza de masa.
+        
+        Args:
+            img (np.ndarray): Imagen de entrada.
+            min_size_pct (float): Tamaño mínimo del objeto en porcentaje del tamaño de la imagen.
+            keep_largest_only (bool): Si es True, mantiene solo el objeto más grande.
+            **kwargs: Argumentos adicionales.
+            
+        Returns:
+            np.ndarray: Imagen con el filtro de limpieza de masa aplicado.
+        """
+        
         if img.dtype != np.uint8:
             img = img.astype(np.uint8)
             
