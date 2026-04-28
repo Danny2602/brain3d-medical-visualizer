@@ -12,12 +12,12 @@ export const FILTER_TYPES = {
         label: 'Iluminación y Contraste',
         color: 'amber',
         items: [
-            { name: 'logarithmic', label: 'Corrección Logarítmica', desc: 'Corrección no lineal de la iluminación.', params: { mode: 'logarithmic', factor: 1.2 } },
-            { name: 'gamma', label: 'Corrección Gamma', desc: 'Corrección no lineal de la iluminación.', params: { mode: 'gamma', factor: 1.2 } },
+            { name: 'logarithmic', label: 'Corrección Logarítmica', desc: 'Corrección no lineal de la iluminación.', params: {} },
+            { name: 'gamma', label: 'Corrección Gamma', desc: 'Corrección no lineal de la iluminación.', params: { factor: 1.2 } },
             { name: 'clahe', label: 'Ecualización CLAHE', desc: 'Ajuste de contraste local adaptativo.', params: { clipLimit: 2.0, tileGridSize: [8, 8] } },
             { name: 'min_max', label: 'Normalización Min-Max', desc: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', params: {} },
             { name: 'global_hist_eq', label: 'Ecualización Global', desc: 'Aplica ecualización de histograma a toda la imagen para mejorar el contraste global.', params: {} },
-            { name: 'local_statistical', label: 'Estadístico Local', desc: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.', params: {} },
+            { name: 'local_statistical', label: 'Estadístico Local', desc: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.', params: { kernel_size: 15, k_factor: 2.0 } },
             { name: 'fuzzy_logic', label: 'Fuzzy Logic', desc: 'Realce experto mediante lógica difusa Mamdani.', params: { mode: 'triangular' } },
         ]
     },
@@ -25,7 +25,7 @@ export const FILTER_TYPES = {
         label: 'Detección de Bordes',
         color: 'rose',
         items: [
-            { name: 'canny_edges', label: 'Canny Edges', desc: 'Detecta los contornos de estructuras.', params: { low_threshold: 50, high_threshold: 150 } },
+            { name: 'canny_edges', label: 'Canny Edges', desc: 'Detecta los contornos de estructuras.', params: { sigma: 0.33 } },
             { name: 'otsu_threshold', label: 'Umbral Otsu', desc: 'Binarización automática por intensidad.', params: {} },
         ]
     },
@@ -33,8 +33,8 @@ export const FILTER_TYPES = {
         label: 'Mejora de Detalles',
         color: 'cyan',
         items: [
-            { name: 'tophat_morf', label: 'Top-Hat Morfológico', desc: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.', params: { kernel_size: 15 } },
-            { name: 'unsharp_mask', label: 'Máscara de Desenfoque', desc: 'Aumenta la nitidez aparente restando una versión difuminada al original.', params: { ksize: 5 } },
+            { name: 'tophat_morf', label: 'Top-Hat Morfológico', desc: 'Extrae detalles pequeños y brillantes suprimiendo el gradiente o variación lenta del fondo.', params: { kernel_size: 100 } },
+            { name: 'unsharp_mask', label: 'Máscara de Desenfoque', desc: 'Aumenta la nitidez aparente restando una versión difuminada al original.', params: { sigma: 1.0 } },
             { name: 'laplacian', label: 'Laplaciano', desc: 'Resalta texturas y contornos calculando la segunda derivada espacial.', params: {} },
         ]
     },
@@ -42,7 +42,7 @@ export const FILTER_TYPES = {
         label: 'Extracción de Máscara',
         color: 'cyan',
         items: [
-            { name: 'morph_connect', label: 'Conexión Morfológica', desc: 'Une píxeles interconectados para formar regiones completas.', params: { kernel_size: 5 } },
+            { name: 'morph_connect', label: 'Conexión Morfológica', desc: 'Une píxeles interconectados para formar regiones completas.', params: { kernel_size: 3 } },
         ]
     }
 };
@@ -61,7 +61,7 @@ export const OPERATOR_TYPES = {
         color: 'purple',
         items: [
             { name: 'mass_cleaning', label: 'Limpieza de Masa', desc: 'Limpia artefactos y extrae el tumor final.', params: { min_size_pct: 0.015 } },
-            { name: 'mask_clipping', label: 'Recorte de Máscara', desc: 'Recorta la máscara de la imagen original.', params: { min_size_pct: 0.015 } },
+            { name: 'mask_clipping', label: 'Recorte de Máscara', desc: 'Recorta la máscara de la imagen original.', params: {} },
         ]
     }
 };

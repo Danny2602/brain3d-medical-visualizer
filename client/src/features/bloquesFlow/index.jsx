@@ -212,9 +212,7 @@ function FlowContent() {
                     </button>
                     <div className="relative max-w-5xl max-h-full" onClick={e => e.stopPropagation()}>
                         <img src={expandedImage} className="w-full h-full object-contain rounded-2xl shadow-2xl border border-white/10" alt="Full View" />
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-6 py-2 rounded-full text-[10px] uppercase font-black tracking-[0.2em] text-white/70 border border-white/5">
-                            Visualización de Alta Definición
-                        </div>
+
                     </div>
                 </div>
             )}

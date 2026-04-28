@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Cuboid, Settings, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
+
+import { LayoutDashboard, Cuboid, Settings, Layers, ChevronLeft, ChevronRight, TrendingUpDown, BetweenHorizontalStart } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 
@@ -65,14 +66,14 @@ export default function MainLayout({ children }) {
             collapsed={collapsed}
           />
           <SidebarItem
-            icon={LayoutDashboard}
+            icon={BetweenHorizontalStart}
             label="Bloques"
             to="/bloques"
             active={location.pathname === '/bloques'}
             collapsed={collapsed}
           />
           <SidebarItem
-            icon={LayoutDashboard}
+            icon={TrendingUpDown}
             label="BloquesFlow"
             to="/bloquesflow"
             active={location.pathname === '/bloquesflow'}

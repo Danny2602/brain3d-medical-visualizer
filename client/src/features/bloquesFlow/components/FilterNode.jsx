@@ -1,11 +1,23 @@
 import React from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { Loader2, ZoomIn, Layers, Image as ImageIcon } from 'lucide-react';
 
-export default function FilterNode({ data }) {
+
+export default function FilterNode({ id, data }) {
     const isClipping = data.filterName === 'mask_clipping';
     const isLogic = data.filterName.startsWith('logic_');
     const isOperator = isClipping || isLogic;
+
+    const { updateNodeData } = useReactFlow();
+
+    const handleInputChange = (paramName, newValue) => {
+        updateNodeData(id, {
+            params: {
+                ...data.params,
+                [paramName]: newValue
+            }
+        });
+    }
 
     return (
         /* Eliminamos overflow-hidden para que los conectores funcionen perfecto */
@@ -51,6 +63,39 @@ export default function FilterNode({ data }) {
                 </span>
                 {data.processing && <Loader2 size={10} className="animate-spin text-blue-400" />}
             </div>
+            {/* PARAMS */}
+            {data.params && Object.keys(data.params).length > 0 && (
+                <div className="p-3 bg-slate-800/80 border-b border-slate-700 flex flex-col gap-2">
+                    {Object.entries(data.params).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-center text-[10px]">
+                            <label className="text-slate-400 font-bold uppercase">{key}</label>
+
+                            {key === 'mode' ? (
+                                <select
+                                    value={value}
+                                    onChange={(e) => handleInputChange(key, e.target.value)}
+                                    className="w-24 bg-slate-900 text-white rounded px-1 py-1 border border-slate-700 focus:border-blue-500 focus:outline-none text-[10px]"
+                                >
+                                    {/* Cambia estos valores por los 3 modos reales que tienes en tu backend */}
+                                    <option value="triangular">Triangular</option>
+                                    <option value="campana">Campana</option>
+                                    <option value="sigmoide">Sigmoide</option>
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    value={value}
+                                    onChange={(e) => handleInputChange(key, e.target.value)}
+                                    className="w-16 bg-slate-900 text-white rounded px-2 py-1 border border-slate-700 focus:border-blue-500 focus:outline-none"
+                                />
+                            )}
+
+                        </div>
+                    ))}
+
+                </div>
+            )}
+
 
             {/* VISTA PREVIA */}
             <div className="p-3 flex items-center justify-center min-h-[100px] bg-gradient-to-b from-slate-900 to-slate-950">
