@@ -10,7 +10,7 @@ class MassCleaningFilter(BaseFilter):
     Filtro de Limpieza de Masa: Elimina objetos pequeños (ruido) en una máscara binaria 
     basándose en su área relativa.
     """
-    def apply(self, img: np.ndarray, min_size_pct: float = 0.015, keep_largest_only: bool = True, **kwargs) -> np.ndarray:
+    def apply(self, img: np.ndarray, min_size_pct: float = 0.015, keep_largest_only: bool = False, **kwargs) -> np.ndarray:
         """
         Aplica el filtro de limpieza de masa.
         

@@ -27,6 +27,7 @@ export const FILTER_TYPES = {
         items: [
             { name: 'canny_edges', label: 'Canny Edges', desc: 'Detecta los contornos de estructuras.', params: { sigma: 0.33 } },
             { name: 'otsu_threshold', label: 'Umbral Otsu', desc: 'Binarización automática por intensidad.', params: {} },
+            { name: 'multi_otsu_threshold', label: 'Umbral Otsu Múltiple', desc: 'Binarización automática por intensidad en múltiples niveles de gris.', params: { classes: 3 } },
         ]
     },
     detail: {
@@ -43,6 +44,7 @@ export const FILTER_TYPES = {
         color: 'cyan',
         items: [
             { name: 'morph_connect', label: 'Conexión Morfológica', desc: 'Une píxeles interconectados para formar regiones completas.', params: { kernel_size: 3 } },
+            { name: 'morph_open', label: 'Apertura Morfológica', desc: 'Realiza una erosión y luego una dilatación.', params: { kernel_size: 3 } },
         ]
     }
 };

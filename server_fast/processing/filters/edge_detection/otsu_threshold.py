@@ -3,11 +3,11 @@
 #Esto entregara una imagen con el umbral de Otsu aplicado
 import cv2
 import numpy as np
-from skimage.filters import thresholding
+
 from processing.base import BaseFilter
 
 class OtsuThresholdFilter(BaseFilter):
-    def apply(self, img: np.ndarray,classes:int=3, **kwargs)->np.ndarray:
+    def apply(self, img: np.ndarray, **kwargs)->np.ndarray:
         """
         Aplica el filtro de umbralización de Otsu.
         
@@ -27,8 +27,3 @@ class OtsuThresholdFilter(BaseFilter):
         # Para tumores sólidos grandes, el Otsu Global es mejor que el Adaptativo.
         _, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return thresh
-        # thresholds = thresholding.threshold_multiotsu(img, classes=classes)
-        # regions=np.digitize(img,bins=thresholds)
-        # mask = np.zeros_like(img)
-        # mask[regions == (classes - 1)] = 255
-        # return mask

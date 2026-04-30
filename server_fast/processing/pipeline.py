@@ -6,6 +6,7 @@ from processing.filters.noise_reduction.gaussian import GaussianFilter
 from processing.filters.mask_extraction.mass_cleaning import MassCleaningFilter
 from processing.filters.mask_extraction.mask_clipping import MaskClippingFilter
 from processing.filters.mask_extraction.morph_connect import MorphConnectFilter
+from processing.filters.mask_extraction.morph_open import MorphOpenFilter
 from processing.filters.illumination_contrast.clahe import CLAHEFilter
 from processing.filters.illumination_contrast.gamma import GammaFilter
 from processing.filters.illumination_contrast.logarithmic import LogarithmicFilter
@@ -15,6 +16,7 @@ from processing.filters.illumination_contrast.local_statistical import LocalStat
 from processing.filters.illumination_contrast.global_hist_eq import GlobalHistEqFilter
 from processing.filters.edge_detection.canny_filter import CannyEdgesFilter
 from processing.filters.edge_detection.otsu_threshold import OtsuThresholdFilter
+from processing.filters.edge_detection.multi_otsu_threshold import MultiOtsuThresholdFilter
 from processing.filters.detail_enhancement.laplacian import LaplacianFilter
 from processing.filters.detail_enhancement.unsharp_mask import UnsharpMaskFilter
 from processing.filters.detail_enhancement.tophat_morf import TopHatMorfFilter
@@ -29,6 +31,7 @@ FILTERS_REGISTRY = {
     "mass_cleaning": MassCleaningFilter(),
     "mask_clipping": MaskClippingFilter(),
     "morph_connect": MorphConnectFilter(),
+    "morph_open": MorphOpenFilter(),
     #illumination_contrast
     "clahe": CLAHEFilter(),
     "gamma": GammaFilter(),
@@ -40,6 +43,7 @@ FILTERS_REGISTRY = {
     #edge_detection
     "canny_edges": CannyEdgesFilter(),
     "otsu_threshold": OtsuThresholdFilter(),
+    "multi_otsu_threshold": MultiOtsuThresholdFilter(),
     #detail_enhancement
     "laplacian": LaplacianFilter(),
     "unsharp_mask": UnsharpMaskFilter(),
