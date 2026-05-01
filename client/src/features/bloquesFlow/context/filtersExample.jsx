@@ -12,10 +12,10 @@ export const FILTER_TYPES = {
         label: 'Iluminación y Contraste',
         color: 'amber',
         items: [
-            { name: 'logarithmic', label: 'Corrección Logarítmica', desc: 'Corrección no lineal de la iluminación.', params: {} },
-            { name: 'gamma', label: 'Corrección Gamma', desc: 'Corrección no lineal de la iluminación.', params: { factor: 1.2 } },
+            { name: 'logarithmic', label: 'Corrección Logarítmica', desc: 'Realiza en la imagen una corrección logarítmica de la iluminación.', params: {} },
+            { name: 'gamma', label: 'Corrección Gamma', desc: 'Realiza una corrección gamma, hace que la imagen sea más brillante o más oscura según el valor del factor.', params: { factor: 1.2 } },
             { name: 'clahe', label: 'Ecualización CLAHE', desc: 'Ajuste de contraste local adaptativo.', params: { clipLimit: 2.0, tileGridSize: [8, 8] } },
-            { name: 'min_max', label: 'Normalización Min-Max', desc: 'Estira el rango dinámico al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', params: {} },
+            { name: 'min_max', label: 'Normalización Min-Max', desc: 'Estira el rango de valores de la imagen al máximo posible, forzando la imagen a abarcar desde el tono más oscuro al más brillante.', params: {} },
             { name: 'global_hist_eq', label: 'Ecualización Global', desc: 'Aplica ecualización de histograma a toda la imagen para mejorar el contraste global.', params: {} },
             { name: 'local_statistical', label: 'Estadístico Local', desc: 'Mejora el contraste basándose en la media y desviación estándar de cada zona local.', params: { kernel_size: 15, k_factor: 2.0 } },
             { name: 'fuzzy_logic', label: 'Fuzzy Logic', desc: 'Realce experto mediante lógica difusa Mamdani.', params: { mode: 'triangular' } },
@@ -51,9 +51,9 @@ export const FILTER_TYPES = {
         label: 'Segmentación Avanzada',
         color: 'blue',
         items: [
-            { name: 'region_growing', label: 'Crecimiento de Regiones', desc: 'Une píxeles interconectados para formar regiones completas.', params: { seed_x: 128, seed_y: 128, tolerance: 10 } },
-            { name: 'skull_stripping', label: 'Eliminación de Cráneo', desc: 'Realiza una erosión y luego una dilatación.', params: { erosion_iters: 5, dilation_iters: 5 } },
-            { name: 'watershed', label: 'Búsqueda de Crestas', desc: 'Realiza una erosión y luego una dilatación.', params: {} },
+            { name: 'region_growing', label: 'Crecimiento de Regiones', desc: 'Realiza una segmentación de la imagen a travez de una semilla y una tolerancia.', params: { seed_x: 128, seed_y: 128, tolerance: 10 } },
+            { name: 'skull_stripping', label: 'Eliminación de Cráneo', desc: 'Realiza una segmentación de la imagen eliminando el cráneo.', params: { erosion_iters: 5, dilation_iters: 5 } },
+            { name: 'watershed', label: 'Búsqueda de Crestas', desc: 'Realiza una segmentación de la imagen a travez de una cresta.', params: {} },
         ]
     }
 
@@ -66,7 +66,7 @@ export const OPERATOR_TYPES = {
         items: [
             { name: 'logic_or', label: 'Unión (OR)', desc: 'Suma dos máscaras (Input A + Input B).', params: {} },
             { name: 'logic_and', label: 'Intersección (AND)', desc: 'Mantiene solo el área común.', params: {} },
-            // { name: 'invert_not', label: 'Inversión (NOT)', desc: 'Invierte los valores de la máscara.', params: {} }
+            { name: 'invert_not', label: 'Inversión (NOT)', desc: 'Invierte los valores de la máscara.', params: {} }
         ]
     },
     final: {
