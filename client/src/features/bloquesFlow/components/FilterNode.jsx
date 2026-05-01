@@ -24,7 +24,7 @@ export default function FilterNode({ id, data }) {
         <div className={`bg-slate-900 border-2 rounded-xl shadow-2xl min-w-[200px] transition-all relative ${data.resultUrl ? 'border-indigo-500' : 'border-slate-700'}`}>
 
             {/* ENTRADAS (HANDLES) */}
-            {isOperator ? (
+            {isOperator && data.filterName !== 'invert_not' ? (
                 <>
                     {/* Etiquetas dinámicas sobre los conectores */}
                     <div className="absolute -top-6 left-0 right-0 flex justify-around text-[7px] font-black uppercase tracking-widest text-slate-500 pointer-events-none">

@@ -46,7 +46,17 @@ export const FILTER_TYPES = {
             { name: 'morph_connect', label: 'Conexión Morfológica', desc: 'Une píxeles interconectados para formar regiones completas.', params: { kernel_size: 3 } },
             { name: 'morph_open', label: 'Apertura Morfológica', desc: 'Realiza una erosión y luego una dilatación.', params: { kernel_size: 3 } },
         ]
+    },
+    advanced_segmentation: {
+        label: 'Segmentación Avanzada',
+        color: 'blue',
+        items: [
+            { name: 'region_growing', label: 'Crecimiento de Regiones', desc: 'Une píxeles interconectados para formar regiones completas.', params: { seed_x: 128, seed_y: 128, tolerance: 10 } },
+            { name: 'skull_stripping', label: 'Eliminación de Cráneo', desc: 'Realiza una erosión y luego una dilatación.', params: { erosion_iters: 5, dilation_iters: 5 } },
+            { name: 'watershed', label: 'Búsqueda de Crestas', desc: 'Realiza una erosión y luego una dilatación.', params: {} },
+        ]
     }
+
 };
 
 export const OPERATOR_TYPES = {
@@ -55,7 +65,8 @@ export const OPERATOR_TYPES = {
         color: 'indigo',
         items: [
             { name: 'logic_or', label: 'Unión (OR)', desc: 'Suma dos máscaras (Input A + Input B).', params: {} },
-            { name: 'logic_and', label: 'Intersección (AND)', desc: 'Mantiene solo el área común.', params: {} }
+            { name: 'logic_and', label: 'Intersección (AND)', desc: 'Mantiene solo el área común.', params: {} },
+            // { name: 'invert_not', label: 'Inversión (NOT)', desc: 'Invierte los valores de la máscara.', params: {} }
         ]
     },
     final: {
