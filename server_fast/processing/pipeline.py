@@ -22,6 +22,12 @@ from processing.filters.detail_enhancement.unsharp_mask import UnsharpMaskFilter
 from processing.filters.detail_enhancement.tophat_morf import TopHatMorfFilter
 from processing.filters.operations.bitwise_and import LogicAndFilter
 from processing.filters.operations.bitwise_or import LogicOrFilter
+from processing.filters.operations.invert_not import InvertNotFilter
+
+from processing.filters.advanced_segmentation.region_growing import RegionGrowingFilter
+from processing.filters.advanced_segmentation.skull_stripping import SkullStrippingFilter
+from processing.filters.advanced_segmentation.watershed import WatershedFilter
+
 FILTERS_REGISTRY = {
     #noise_reduction
     "nl_means": NlMeansFilter(),
@@ -51,6 +57,12 @@ FILTERS_REGISTRY = {
     #operations
     "logic_and": LogicAndFilter(),
     "logic_or": LogicOrFilter(),
+    "invert_not": InvertNotFilter(),
+
+    #advanced_segmentation
+    "region_growing": RegionGrowingFilter(),
+    "skull_stripping": SkullStrippingFilter(),
+    "watershed": WatershedFilter(),
 }
 
 
