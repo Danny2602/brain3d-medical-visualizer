@@ -27,7 +27,7 @@ from processing.filters.operations.invert_not import InvertNotFilter
 from processing.filters.advanced_segmentation.region_growing import RegionGrowingFilter
 from processing.filters.advanced_segmentation.skull_stripping import SkullStrippingFilter
 from processing.filters.advanced_segmentation.watershed import WatershedFilter
-
+#Filtros
 FILTERS_REGISTRY = {
     #noise_reduction
     "nl_means": NlMeansFilter(),
