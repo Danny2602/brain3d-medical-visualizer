@@ -28,7 +28,7 @@ export default function ImageNode({ data }) {
                 </div>
                 <div className="flex gap-1">
                     {preview && (
-                        <button 
+                        <button
                             onClick={() => data.onExpand(preview)} // Llama al modal
                             className="text-slate-500 hover:text-white transition-colors"
                         >
@@ -57,7 +57,7 @@ export default function ImageNode({ data }) {
                 )}
             </div>
 
-            {/* Handle de salida HACIA ABAJO */}
+            {/* Handle de salida HACIA ABAJO  para conectarlo al segmen*/}
             <Handle
                 type="source"
                 position={Position.Bottom}
