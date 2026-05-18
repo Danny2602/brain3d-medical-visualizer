@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { useSegmentacion } from '@/features/bloques/hooks/UseSegmentacion';
 
 // Catálogo agrupado por categoría para el panel izquierdo
+// Distintos filtros 
 const FILTER_SECTIONS = [
     {
         label: 'Reducción de Ruido',
