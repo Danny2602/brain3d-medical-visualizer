@@ -2,6 +2,8 @@
 #morph_open.py : "filtro de morph open"
 #esto hace que se abran los pixeles que estan cerca entre si 
 #y que se eliminen los pixeles que estan cerca del centro de la imagen
+
+#Esto erosiona el objeto y se abre los pixeles que estan cerca entre si
 import cv2
 import numpy as np
 
