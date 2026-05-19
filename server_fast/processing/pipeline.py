@@ -1,5 +1,4 @@
 import numpy as np
-import traceback
 from processing.filters.noise_reduction.nl_means import NlMeansFilter
 from processing.filters.noise_reduction.bilateral import BilateralFilter
 from processing.filters.noise_reduction.gaussian import GaussianFilter
