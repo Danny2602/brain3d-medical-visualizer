@@ -32,7 +32,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Herramienta de traducción de Fotografía a Texto
+# Herramienta de traducción de Fotografía a Texto 
+#Canbio Para la entrada de imagenes tipo DICOM 
 def image_to_base64(img: np.ndarray) -> str:
     _, buffer = cv2.imencode('.png', img)
     return "data:image/png;base64," + base64.b64encode(buffer).decode()
