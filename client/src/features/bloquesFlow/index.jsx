@@ -11,8 +11,9 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { FILTER_TYPES, OPERATOR_TYPES } from './context/filtersExample';
-import { useSegmentacion } from './hook/UseSegementacion';
+import { FILTER_TYPES, OPERATOR_TYPES, DICOM_FILTER_TYPES, DICOM_OPERATOR_TYPES } from './context/filtersExample';
+import { useSegmentacionPng } from './hook/UseSegementacionPng';
+import { useSegmentacionDicom } from './hook/UseSegmentacionDicom';
 import ImageNode from './components/ImageNode';
 import FilterNode from './components/FilterNode';
 import SidebarItem from './components/SidebarItem';
@@ -28,9 +29,11 @@ function FlowContent() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [activeTab, setActiveTab] = useState('filters');
     const [expandedImage, setExpandedImage] = useState(null);
+    const [isDicomMode, setIsDicomMode] = useState(false);
 
     const { screenToFlowPosition } = useReactFlow();
-    const { ejecutarProcesamiento, loading, error } = useSegmentacion();
+    const { ejecutarProcesamiento, loading, error } = useSegmentacionPng();
+    const { ejecutarProcesamiento: ejecutarProcesamientoDicom, loading: loadingDicom, error: errorDicom } = useSegmentacionDicom();
 
     const onNodeExpand = (url) => setExpandedImage(url);
 
@@ -41,7 +44,8 @@ function FlowContent() {
             data: {
                 label: 'Imagen Original',
                 onImageSelect: (file) => setSelectedFile(file),
-                onExpand: onNodeExpand
+                onExpand: onNodeExpand,
+                isDicomMode: false
             },
             position: { x: 300, y: 50 },
         },
@@ -86,6 +90,11 @@ function FlowContent() {
         setNodes((nds) => nds.concat(newNode));
     }, [screenToFlowPosition]);
 
+    const handleToggleDicomMode = () => {
+        setIsDicomMode(!isDicomMode);
+        setNodes(nds => nds.map(n => n.id === 'original' ? { ...n, data: { ...n.data, isDicomMode: !isDicomMode } } : n));
+    };
+
     const handleProcess = async () => {
         if (!selectedFile) return;
 
@@ -115,7 +124,9 @@ function FlowContent() {
                 };
             });
 
-        const res = await ejecutarProcesamiento(selectedFile, flowConfig);
+        const res = isDicomMode 
+            ? await ejecutarProcesamientoDicom(selectedFile, flowConfig)
+            : await ejecutarProcesamiento(selectedFile, flowConfig);
 
         if (res && res.nodos) {
             setNodes((nds) => nds.map((node) => {
@@ -138,6 +149,9 @@ function FlowContent() {
         }
     };
 
+    const currentError = isDicomMode ? errorDicom : error;
+    const currentLoading = isDicomMode ? loadingDicom : loading;
+
     return (
         <div className="flex h-full w-full bg-slate-950 text-white overflow-hidden rounded-2xl border border-slate-800 shadow-2xl relative">
 
@@ -146,6 +160,20 @@ function FlowContent() {
                 <div className="p-6 pb-2">
                     <h2 className="text-xl font-black bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent tracking-tighter">PIPELINE STUDIO</h2>
                     <p className="text-[9px] text-slate-500 mt-1 uppercase tracking-[0.3em]">Medical Visualizer Node Engine</p>
+                </div>
+                
+                <div className="px-6 mt-4">
+                    <label className="flex items-center cursor-pointer justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 hover:border-slate-600 transition-colors">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-white uppercase">Modo DICOM</span>
+                            <span className="text-[8px] text-slate-400">Usar API y filtros DICOM</span>
+                        </div>
+                        <div className="relative">
+                            <input type="checkbox" className="sr-only" checked={isDicomMode} onChange={handleToggleDicomMode} />
+                            <div className={`block w-10 h-6 rounded-full transition-colors ${isDicomMode ? 'bg-blue-600' : 'bg-slate-600'}`}></div>
+                            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isDicomMode ? 'transform translate-x-4' : ''}`}></div>
+                        </div>
+                    </label>
                 </div>
 
                 <div className="flex px-4 mt-6 gap-2">
@@ -158,7 +186,11 @@ function FlowContent() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 mt-4 custom-scrollbar">
-                    {Object.entries(activeTab === 'filters' ? FILTER_TYPES : OPERATOR_TYPES).map(([key, group]) => (
+                    {Object.entries(
+                        activeTab === 'filters' 
+                            ? (isDicomMode ? DICOM_FILTER_TYPES : FILTER_TYPES) 
+                            : (isDicomMode ? DICOM_OPERATOR_TYPES : OPERATOR_TYPES)
+                    ).map(([key, group]) => (
                         <div key={key} className="mb-8">
                             <h3 className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] mb-4 flex items-center gap-2">
                                 <div className={`w-1.5 h-1.5 rounded-full bg-${group.color}-500 shadow-[0_0_8px] shadow-${group.color}-500`} />
@@ -172,12 +204,12 @@ function FlowContent() {
                 </div>
 
                 <div className="p-4 bg-slate-900 border-t border-slate-800">
-                    {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-xl flex items-center gap-2 text-red-500 text-[10px] font-bold"><AlertCircle size={14} /> {error}</div>}
-                    <button onClick={handleProcess} disabled={loading} className={`w-full group relative overflow-hidden p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-2xl ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    {currentError && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded-xl flex items-center gap-2 text-red-500 text-[10px] font-bold"><AlertCircle size={14} /> {currentError}</div>}
+                    <button onClick={handleProcess} disabled={currentLoading} className={`w-full group relative overflow-hidden p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-2xl ${currentLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600" />
                         <div className="relative flex items-center justify-center gap-3">
-                            {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Play size={16} fill="currentColor" />}
-                            {loading ? 'Procesando...' : 'Lanzar Pipeline'}
+                            {currentLoading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <Play size={16} fill="currentColor" />}
+                            {currentLoading ? 'Procesando...' : 'Lanzar Pipeline'}
                         </div>
                     </button>
                 </div>

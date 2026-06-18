@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { segmentacion } from '../apis/segmentacion';
 
-export const useSegmentacion = () => {
+export const useSegmentacionDicom = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
@@ -21,11 +21,11 @@ export const useSegmentacion = () => {
         setError(null);
 
         try {
-            const result = await segmentacion.postSegmentacion(imageFile, flowConfig);
+            const result = await segmentacion.postSegmentacionDicom(imageFile, flowConfig);
             setData(result);
             return result;
         } catch (err) {
-            const mensajeError = err.response?.data?.detail || "Error al procesar la imagen en el servidor.";
+            const mensajeError = err.response?.data?.detail || "Error al procesar el Dicom en el servidor.";
             setError(mensajeError);
             return null;
         } finally {

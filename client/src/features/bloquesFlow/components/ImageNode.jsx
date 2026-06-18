@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Upload, Maximize2, Trash2, ImageIcon } from 'lucide-react';
+import { Upload, Maximize2, Trash2, ImageIcon, Loader2 } from 'lucide-react';
+import { segmentacion } from '../apis/segmentacion';
 
 export default function ImageNode({ data }) {
     const [preview, setPreview] = useState(null);
+    const [loadingPreview, setLoadingPreview] = useState(false);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            const url = URL.createObjectURL(file);
-            setPreview(url);
+            if (data.isDicomMode) {
+                setLoadingPreview(true);
+                try {
+                    const res = await segmentacion.postPreviewDicom(file);
+                    if (res.preview_url) {
+                        setPreview(res.preview_url);
+                    }
+                } catch (error) {
+                    console.error("Error previewing dicom", error);
+                } finally {
+                    setLoadingPreview(false);
+                }
+            } else {
+                const url = URL.createObjectURL(file);
+                setPreview(url);
+            }
             data.onImageSelect(file);
         }
     };
@@ -39,11 +55,16 @@ export default function ImageNode({ data }) {
             </div>
 
             <div className="relative group">
-                {!preview ? (
+                {loadingPreview ? (
+                     <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-700 rounded-xl">
+                        <Loader2 className="text-blue-500 animate-spin mb-2" size={24} />
+                        <span className="text-[9px] text-slate-500 font-bold uppercase">Cargando Preview...</span>
+                    </div>
+                ) : !preview ? (
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-500/5 transition-all">
                         <Upload className="text-slate-500 mb-2" size={24} />
-                        <span className="text-[9px] text-slate-500 font-bold uppercase">Subir MRI</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                        <span className="text-[9px] text-slate-500 font-bold uppercase">Subir MRI {data.isDicomMode ? '(DICOM)' : ''}</span>
+                        <input type="file" className="hidden" accept={data.isDicomMode ? ".dcm,application/dicom" : "image/*"} onChange={handleFileChange} />
                     </label>
                 ) : (
                     <div className="relative overflow-hidden rounded-xl">

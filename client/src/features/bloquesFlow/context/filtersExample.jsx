@@ -78,3 +78,23 @@ export const OPERATOR_TYPES = {
         ]
     }
 };
+
+export const DICOM_FILTER_TYPES = {
+    noise: {
+        label: 'Reducción de Ruido (DICOM)',
+        color: 'emerald',
+        items: [
+            { name: 'bilateral_filter', label: 'Filtro Bilateral DICOM', desc: 'Suaviza la imagen DICOM preservando bordes.', params: { diameter: 5, sigma_color: 50, sigma_space: 50 } },
+            { name: 'gaussian_filter', label: 'Filtro Gaussiano DICOM', desc: 'Suaviza la imagen DICOM con un filtro gaussiano.', params: { kernel_size: 5 } },
+            { name: 'nl_means_filter', label: 'Filtro NL-Means DICOM', desc: 'Suaviza la imagen DICOM con un filtro NL-Means.', params: { kernel_size: 5 } },
+        ]
+    },
+};
+
+export const DICOM_OPERATOR_TYPES = {
+    logic: {
+        label: 'Operaciones DICOM',
+        color: 'indigo',
+        items: []
+    }
+};
