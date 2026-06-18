@@ -2,9 +2,21 @@ from fastapi import APIRouter, UploadFile, File, Form
 import json
 
 from processing.dicom.pipeline_nodes import MedicalPipelineBuilderDicom
+
 from core.utils import read_dicom_image, image_to_base64
 
 router = APIRouter()
+
+@router.post("/preview-dicom")
+async def preview_dicom(
+    image: UploadFile = File(...)
+):
+    img_bytes = await image.read()
+    try:
+        img_cv = read_dicom_image(img_bytes)
+        return {"preview_url": image_to_base64(img_cv)}
+    except Exception as e:
+        return {"error": f"No se pudo leer el archivo DICOM: {str(e)}"}
 
 @router.post("/process-dicom-nodos")
 async def process_dicom_nodos(

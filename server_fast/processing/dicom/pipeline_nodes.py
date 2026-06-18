@@ -1,10 +1,19 @@
 import numpy as np
 from processing.dicom.filters.noise_reduction.bilateral import BilateralFilter
+from processing.dicom.filters.noise_reduction.gaussian import GaussianFilter
+from processing.dicom.filters.noise_reduction.nl_means import NlMeansFilter
+from processing.dicom.filters.mask_extraction.region_fill import RegionFillFilter
+from processing.dicom.filters.mask_extraction.morph_erode import MorphErodeFilter
+from processing.dicom.filters.mask_extraction.morph_dilate import MorphDilateFilter
 
 FILTERS_REGISTRY = {
     # noise_reduction
     "bilateral_filter": BilateralFilter(),
-    # Registra aquí los futuros filtros DICOM...
+    "gaussian_filter": GaussianFilter(),
+    "nl_means_filter": NlMeansFilter(),
+    "morph_erode_filter": MorphErodeFilter(),
+    "morph_dilate_filter": MorphDilateFilter(),
+    "region_fill_filter": RegionFillFilter(),
 }
 
 class MedicalPipelineBuilderDicom:
