@@ -1,25 +1,26 @@
-#Este filtro se encarga de aplicar el filtro de min-max a la imagen y el archivo tiene el nombre
-#min_max.py : "filtro de min-max"
-#Esto entregara una imagen con el filtro de min-max aplicado
-#Este usa el histograma de la imagen para aplicar el filtro
-import cv2
 import numpy as np
-
 from processing.base import BaseFilter
 
 class MinMaxFilter(BaseFilter):
-    def apply(self, img: np.ndarray, alpha: int = 0, beta: int = 255, **kwargs)->np.ndarray:
+    def apply(self, img: np.ndarray, alpha: float = 0.0, beta: float = 1.0, **kwargs)->np.ndarray:
         """
-        Aplica el filtro de min-max a la imagen.
+        Aplica el filtro de min-max a la imagen. Estira el contraste al rango deseado.
         
         Args:
-            img (np.ndarray): Imagen de entrada.
-            alpha (int): Valor mínimo de la imagen.
-            beta (int): Valor máximo de la imagen.
-            **kwargs: Argumentos adicionales.
-            
-        Returns:
-            np.ndarray: Imagen con el filtro de min-max aplicado.
+            img (np.ndarray): Imagen DICOM de entrada.
+            alpha (float): Límite inferior físico al que estirar.
+            beta (float): Límite superior físico al que estirar.
         """
-        img_filtered = cv2.normalize(img, None, alpha=alpha, beta=beta, norm_type=cv2.NORM_MINMAX)
-        return img_filtered
+        min_val = np.min(img)
+        max_val = np.max(img)
+        
+        if min_val == max_val:
+            return img.copy()
+            
+        # Normalizar a 0-1
+        normalized = (img.astype(np.float32) - min_val) / (max_val - min_val)
+        
+        # Estirar al nuevo rango [alpha, beta]
+        stretched = normalized * (beta - alpha) + alpha
+        
+        return stretched.astype(img.dtype)

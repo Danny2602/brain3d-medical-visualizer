@@ -1,23 +1,21 @@
-#Este filtro se encarga de reducir el ruido de la imagen y el archivo tiene el nombre
-#gaussian.py : "filtro gaussiano"
-#Esto entregara una imagen mas suave
-import cv2
 import numpy as np
-
+from scipy.ndimage import gaussian_filter
 from processing.base import BaseFilter
 
 class GaussianFilter(BaseFilter):
-    def apply(self, img: np.ndarray, kernel_size: int = 5, **kwargs)->np.ndarray:
+    def apply(self, img: np.ndarray, kernel_size: int = 5, **kwargs) -> np.ndarray:
         """
-        Aplica el filtro gaussiano.
+        Aplica el filtro gaussiano en alta precisión usando scipy.
         
         Args:
-            img (np.ndarray): Imagen de entrada.
-            kernel_size (int): Tamaño del kernel.
-            **kwargs: Argumentos adicionales.
+            img (np.ndarray): Imagen DICOM de entrada.
+            kernel_size (int): Tamaño del kernel (se aproxima a sigma).
             
         Returns:
             np.ndarray: Imagen filtrada.
         """
-        filtered = cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
-        return filtered
+        # SciPy usa sigma en lugar de kernel_size. Aproximamos la conversión estándar de OpenCV:
+        sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8 if kernel_size > 3 else 1.0
+        
+        filtered = gaussian_filter(img, sigma=sigma)
+        return filtered.astype(img.dtype)

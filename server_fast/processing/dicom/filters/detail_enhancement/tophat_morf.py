@@ -1,25 +1,18 @@
-#Este filtro se encarga de aplicar el filtro de tophat morf a la imagen y el archivo tiene el nombre
-#tophat_morf.py : "filtro de tophat morf"
-#Esto entregara una imagen con el filtro de tophat morf aplicado
-#Morfologia matematica de contraste que resalta las partes brillantes de la imagen
-import cv2
 import numpy as np
-
+from scipy.ndimage import white_tophat
 from processing.base import BaseFilter
 
 class TopHatMorfFilter(BaseFilter):
-    def apply(self, img: np.ndarray, kernel_size: int = 100, **kwargs)->np.ndarray:
+    def apply(self, img: np.ndarray, kernel_size: int = 5, **kwargs) -> np.ndarray:
+        """ 
+        Realza objetos brillantes más pequeños que el elemento estructurante.
+        Excelente para detectar calcificaciones o vasos sanguíneos en fondo oscuro.
         """
-        Aplica el filtro de tophat morf a la imagen.
-        
-        Args:
-            img (np.ndarray): Imagen de entrada.
-            kernel_size (int): Tamaño del kernel.
-            **kwargs: Argumentos adicionales.
+        if isinstance(kernel_size, str): kernel_size = int(kernel_size)
             
-        Returns:
-            np.ndarray: Imagen con el filtro de tophat morf aplicado.
-        """
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
-        img_filtered = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
-        return img_filtered
+        structure = np.ones((kernel_size, kernel_size))
+        
+        # white_tophat maneja flotantes matemáticamente 
+        tophat = white_tophat(img, footprint=structure)
+        
+        return tophat.astype(img.dtype)

@@ -1,28 +1,27 @@
-#Este filtro se encarga de aplicar el filtro de componentes conectados a la imagen y el archivo tiene el nombre
-#bitwise_or.py : "operaciones bit a bit"
-#Entregara una imagen que es el resultado de la operacion logica OR entre la imagen actual y la imagen del filtro seleccionado
-import cv2
 import numpy as np
 from processing.base import BaseFilter
 
 class LogicOrFilter(BaseFilter):
-    """
-    Simula el arrastable de fusionar 2 capas.
-    """
-    def apply(self, img: np.ndarray, history: dict = None, layer_a: str = "", layer_b: str = "", **kwargs) -> np.ndarray:
-        if not history:
-            print("Error: No hay historial disponible para fusionar.")
-            return img
+    def apply(self, img: np.ndarray, mask_id: str = None, history: dict = None, **kwargs) -> np.ndarray:
+        """
+        Unión lógica (OR) entre dos imágenes o máscaras DICOM.
+        """
+        target_mask_id = kwargs.get('layer_b', mask_id)
+        if not history or target_mask_id not in history:
+            return img.copy()
             
-        if not layer_a or not layer_b:
-            print("Error: Se requiere especificar layer_a y layer_b en los parámetros (params) para Operadores Lógicos.")
-            return img
+        mask = history[target_mask_id]
+        if mask.shape != img.shape:
+            return img.copy()
             
-        if layer_a not in history or layer_b not in history:
-            print(f"Error: Una de las capas no fue encontrada en el historial ({layer_a} o {layer_b}).")
-            return img
-            
-        img_a = history[layer_a]
-        img_b = history[layer_b]
-                
-        return cv2.bitwise_or(img_a, img_b)
+        min_img = np.min(img)
+        max_img = np.max(img)
+        img_binary = img > (min_img + max_img) / 2
+        
+        min_mask = np.min(mask)
+        max_mask = np.max(mask)
+        mask_binary = mask > (min_mask + max_mask) / 2
+        
+        result_bool = np.logical_or(img_binary, mask_binary)
+        
+        return np.where(result_bool, max_img, min_img).astype(img.dtype)

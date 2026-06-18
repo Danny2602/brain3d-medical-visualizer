@@ -1,14 +1,22 @@
-#Este filtro se encarga de aplicar el filtro de ecualización de histograma global a la imagen y el archivo tiene el nombre
-#global_hist_eq.py : "ecualización de histograma global"
-#Entrega una imagen que tiene el contraste mejorado globalmente
-import cv2
 import numpy as np
+from skimage.exposure import equalize_hist
 from processing.base import BaseFilter
 
 class GlobalHistEqFilter(BaseFilter):
     def apply(self, img: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Aplica el filtro de ecualización de histograma global a la imagen.
+        Aplica ecualización de histograma global sobre la imagen de alta precisión.
         """
-        img_equalized = cv2.equalizeHist(img)
-        return img_equalized
+        min_val = np.min(img)
+        max_val = np.max(img)
+        range_val = max_val - min_val
+        
+        if range_val == 0:
+            return img.copy()
+            
+        img_normalized = (img - min_val) / range_val
+        
+        img_eq = equalize_hist(img_normalized)
+        
+        result = (img_eq * range_val) + min_val
+        return result.astype(img.dtype)

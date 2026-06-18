@@ -1,17 +1,25 @@
-
 import numpy as np
+from skimage.exposure import adjust_log
 from processing.base import BaseFilter
 
 class LogarithmicFilter(BaseFilter):
-    """
-    Aplica la transformada logarítmica a la imagen.
-    """
-    def apply(self, img: np.ndarray, **kwargs) -> np.ndarray:
-        img_float = img.astype(np.float32) / 255.0 #El divisor  es 255 porque los valores de la imagen estan en el rango de 0 a 255
-        # Usar el percentil 99 en lugar del max absoluto evita que un solo píxel brillante arruine el contraste
-        max_val = np.percentile(img_float, 99) 
-        if max_val == 0: max_val = 1e-5 # Evitar división por cero
+    def apply(self, img: np.ndarray, gain: float = 1.0, **kwargs) -> np.ndarray:
+        """
+        Aplica transformación logarítmica preservando el tipo de dato físico.
+        """
+        if isinstance(gain, str):
+            gain = float(gain)
+            
+        min_val = np.min(img)
+        max_val = np.max(img)
+        range_val = max_val - min_val
         
-        c = 1.0 / np.log(1.0 + max_val)
-        transformed = c * np.log(1.0 + img_float)
-        return np.clip(transformed * 255, 0, 255).astype(np.uint8)
+        if range_val == 0:
+            return img.copy()
+            
+        img_normalized = (img - min_val) / range_val
+        
+        img_log = adjust_log(img_normalized, gain=gain)
+        
+        result = (img_log * range_val) + min_val
+        return result.astype(img.dtype)
