@@ -79,6 +79,8 @@ export const OPERATOR_TYPES = {
     }
 };
 
+
+//Filtros para el formato dicom 
 export const DICOM_FILTER_TYPES = {
     noise: {
         label: 'Reducción de Ruido (DICOM)',
