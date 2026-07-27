@@ -96,7 +96,7 @@ class MedicalPipelineBuilderDicom:
         self.execution_trace = {} 
     
     def execute_flow(self, flow_config: list) -> tuple:
-        # 1. Registro inicial de todos los nodos en la traza como pendientes
+        #  Registro inicial de todos los nodos en la traza como pendientes
         for step in flow_config:
             node_id = step.get('id')
             filter_name = step.get('filter_name')
@@ -107,7 +107,7 @@ class MedicalPipelineBuilderDicom:
                 "status": "pending"
             }
 
-        # 2. Ejecución basada en resolución dinámica de dependencias (Orden Topológico)
+        # Ejecución basada en resolución dinámica de dependencias (Orden Topológico)
         pending = list(flow_config)
         
         while pending:
