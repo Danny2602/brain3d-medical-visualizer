@@ -1,3 +1,4 @@
+//Filtros par imagens png
 export const FILTER_TYPES = {
     noise: {
         label: 'Reducción de Ruido',
