@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import png_router, dicom_router
+from api.routers import png_router, dicom_router, ai_dicom_router
 
 app = FastAPI()
 
@@ -15,3 +15,5 @@ app.add_middleware(
 
 app.include_router(png_router.router, prefix="/api")
 app.include_router(dicom_router.router, prefix="/api")
+app.include_router(ai_dicom_router.router, prefix="/api")
+

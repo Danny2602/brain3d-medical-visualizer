@@ -3,6 +3,10 @@ venv/
 env/
 .env
 
+# Base de Datos de Memoria Persistente (SQLite + Optuna)
+# Contiene el conocimiento de las mejores recetas aprendidas
+ai/preprocessing/optuna_memory.db
+
 # Archivos de caché de Python (Archivos temporales basura)
 __pycache__/
 *.pyc
