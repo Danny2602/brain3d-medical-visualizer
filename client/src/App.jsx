@@ -4,7 +4,7 @@ import MainLayout from './components/layout/MainLayout';
 import Segmentacion from './features/segmentacion';
 import Bloques from './features/bloques';
 import BloquesFlow from './features/bloquesFlow';
-
+import IAQuality from './features/iaQuality';
 
 function App() {
   // Configuración de rutas principales
@@ -17,6 +17,7 @@ function App() {
           <Route path="/segmentacion" element={<div className="p-10 text-xl font-bold text-slate-500"><Segmentacion /></div>} />
           <Route path="/bloques" element={<div className="p-10 text-xl font-bold text-slate-500"><Bloques /></div>} />
           <Route path="/bloquesflow" element={<div className="p-10 text-xl font-bold text-slate-500"><BloquesFlow /></div>} />
+          <Route path="/iaquality" element={<div className="p-10 text-xl font-bold text-slate-500"><IAQuality /></div>} />
           <Route path="/settings" element={<div className="p-10 text-xl font-bold text-slate-500">Configuración en construcción</div>} />
         </Routes>
       </MainLayout>

@@ -79,7 +79,13 @@ export default function MainLayout({ children }) {
             active={location.pathname === '/bloquesflow'}
             collapsed={collapsed}
           />
-
+          <SidebarItem
+            icon={TrendingUpDown}
+            label="IAQuality"
+            to="/iaquality"
+            active={location.pathname === '/iaquality'}
+            collapsed={collapsed}
+          />
         </nav>
 
         <div className="mt-auto pt-4 border-t border-white/10">
