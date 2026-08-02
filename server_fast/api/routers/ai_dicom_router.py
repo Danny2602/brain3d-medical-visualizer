@@ -8,6 +8,8 @@ from ai.preprocessing.presets import BRAIN_PRESETS
 router = APIRouter(prefix="/ai/dicom", tags=["AI DICOM Medical"])
 
 # Instancia global del optimizador (mantiene la caché en RAM durante la sesión del servidor)
+#Api de pruebas de mejora de imagen mediante ia de procesamiento de imagen
+
 _enhancer = AutoDicomEnhancer()
 
 @router.get("/presets")
