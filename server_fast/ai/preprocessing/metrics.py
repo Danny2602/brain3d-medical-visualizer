@@ -1,122 +1,183 @@
 import numpy as np
 from scipy.ndimage import sobel
 
-def compute_snr(img: np.ndarray) -> float:
+def _get_tissue_and_bg_masks(img: np.ndarray):
     """
-    SNR calibrada para imagen médica.
-    IMPORTANTE: Se normaliza al rango [0,1] para que no domine a las otras métricas.
-    Un filtro que suaviza artificialmente puede inflar el SNR — por eso tiene poco peso final.
+    Segmenta dinámicamente la máscara de tejido anatómico (ROI) y la máscara de fondo (aire).
     """
-    if img is None or img.size == 0:
-        return 0.0
-    
     min_val, max_val = float(np.min(img)), float(np.max(img))
-    if min_val == max_val:
-        return 0.0
-    
-    threshold = min_val + 0.15 * (max_val - min_val)
-    brain_mask = img > threshold
-    bg_mask = ~brain_mask
-    
-    signal_mean = float(np.mean(img[brain_mask])) if np.any(brain_mask) else 0.0
-    noise_std = float(np.std(img[bg_mask])) if np.any(bg_mask) else 1e-5
-    if noise_std < 1e-5:
-        noise_std = 1e-5
-    
-    raw_snr = signal_mean / noise_std
-    # Normalizar con tangente hiperbólica para evitar que filtros de borroneo dominen
-    return float(np.tanh(raw_snr / 50.0))
+    range_val = max_val - min_val
+    if range_val < 1e-5:
+        return np.ones_like(img, dtype=bool), np.zeros_like(img, dtype=bool)
+
+    # El fondo es la zona de aire/escáner vacía (< 8% del rango de intensidad)
+    bg_threshold = min_val + 0.08 * range_val
+    bg_mask = img <= bg_threshold
+
+    # El tejido anatómico útil es la zona por encima del umbral de fondo (> 12% del rango)
+    tissue_threshold = min_val + 0.12 * range_val
+    tissue_mask = img >= tissue_threshold
+
+    return tissue_mask, bg_mask
 
 
-def compute_cnr(img: np.ndarray) -> float:
+def compute_background_purity_penalty(img: np.ndarray, bg_mask: np.ndarray) -> float:
     """
-    CNR entre tejidos de intensidad media y alta (materia gris vs materia blanca / lesiones).
-    Normalizado a [0,1].
+    Penaliza fuertemente si un filtro convierte el fondo negro de aire en un tono grisáceo.
+    Retorna un factor multiplicador entre 0.1 (totalmente arruinado) y 1.0 (negro puro).
     """
-    if img is None or img.size == 0:
-        return 0.0
+    if bg_mask is None or not np.any(bg_mask):
+        return 1.0
+
+    bg_pixels = img[bg_mask].astype(float)
+    bg_mean = float(np.mean(bg_pixels))
     
-    min_val, max_val = float(np.min(img)), float(np.max(img))
-    if min_val == max_val:
-        return 0.0
-    
-    mid_low  = min_val + 0.3 * (max_val - min_val)
-    mid_high = min_val + 0.7 * (max_val - min_val)
-    
-    region_a = img[(img >= mid_low) & (img < mid_high)]
-    region_b = img[img >= mid_high]
-    bg       = img[img < mid_low]
-    
-    if region_a.size == 0 or region_b.size == 0:
-        return 0.0
-    
-    mean_a    = float(np.mean(region_a))
-    mean_b    = float(np.mean(region_b))
-    noise_std = float(np.std(bg)) if bg.size > 0 else 1.0
-    if noise_std < 1e-5:
-        noise_std = 1e-5
-    
-    raw_cnr = abs(mean_a - mean_b) / noise_std
-    return float(np.tanh(raw_cnr / 30.0))
+    # Si el fondo promedio excede 10 unidades de brillo (en 0-255), penalizar progresivamente
+    if bg_mean <= 5.0:
+        return 1.0
+    elif bg_mean >= 30.0:
+        return 0.1
+    else:
+        # Caída lineal de 1.0 a 0.1 entre 5 y 30
+        return float(1.0 - 0.9 * ((bg_mean - 5.0) / 25.0))
 
 
-def compute_sharpness_tenengrad(img: np.ndarray) -> float:
+def compute_roi_cnr(img: np.ndarray, tissue_mask: np.ndarray) -> float:
     """
-    Nitidez de bordes anatómicos (Tenengrad / Sobel). 
-    Una imagen borrosa tiene Tenengrad MUY bajo — esto penaliza el sobre-suavizado.
-    Normalizado a [0,1].
+    Calcula la Relación Contraste-Ruido (CNR) evaluada estrictamente DENTRO del tejido cerebral.
+    Mide la diferenciación entre sustancia gris (intensidad media) y sustancia blanca/lesiones (alta intensidad).
     """
-    if img is None or img.size == 0:
+    if tissue_mask is None or not np.any(tissue_mask):
         return 0.0
-    
+
+    tissue_pixels = img[tissue_mask].astype(float)
+    if tissue_pixels.size < 10:
+        return 0.0
+
+    min_t, max_t = float(np.min(tissue_pixels)), float(np.max(tissue_pixels))
+    if max_t == min_t:
+        return 0.0
+
+    mid_threshold = min_t + 0.50 * (max_t - min_t)
+    region_gray_matter = tissue_pixels[tissue_pixels < mid_threshold]
+    region_white_matter = tissue_pixels[tissue_pixels >= mid_threshold]
+
+    if region_gray_matter.size == 0 or region_white_matter.size == 0:
+        return 0.0
+
+    mean_gray = float(np.mean(region_gray_matter))
+    mean_white = float(np.mean(region_white_matter))
+    std_tissue = float(np.std(tissue_pixels))
+    if std_tissue < 1e-5:
+        std_tissue = 1e-5
+
+    raw_cnr = abs(mean_white - mean_gray) / std_tissue
+    # Normalizado con tanh para mapear suavemente a [0, 1]
+    return float(np.tanh(raw_cnr / 2.0))
+
+
+def compute_roi_sharpness_tenengrad(img: np.ndarray, tissue_mask: np.ndarray) -> float:
+    """
+    Mide la nitidez de bordes anatómicos reales usando el gradiente Sobel (Tenengrad)
+    calculado EXCLUSIVAMENTE dentro del tejido cerebral.
+    Penaliza fuertemente las imágenes borrosas o sobre-suavizadas.
+    """
+    if tissue_mask is None or not np.any(tissue_mask):
+        return 0.0
+
     img_float = img.astype(np.float64)
     gx = sobel(img_float, axis=0)
     gy = sobel(img_float, axis=1)
-    grad_mean = float(np.mean(np.sqrt(gx**2 + gy**2)))
-    
-    # La magnitud de gradiente máxima posible para uint8 es ~255*4
-    max_possible = 255.0 * 4.0
-    return float(np.clip(grad_mean / max_possible, 0.0, 1.0))
+    grad_magnitude = np.sqrt(gx**2 + gy**2)
+
+    grad_tissue = grad_magnitude[tissue_mask]
+    if grad_tissue.size == 0:
+        return 0.0
+
+    mean_grad = float(np.mean(grad_tissue))
+    # Normalizado a [0, 1]: Gradientes típicos de tejido bien enfocado rondan 25-60
+    return float(np.clip(mean_grad / 50.0, 0.0, 1.0))
 
 
-def compute_entropy(img: np.ndarray) -> float:
+def compute_roi_entropy(img: np.ndarray, tissue_mask: np.ndarray) -> float:
     """
-    Entropía de la imagen (bits de información).
-    Un filtro que borra/suaviza REDUCE la entropía, lo cual penaliza la puntuación.
-    Normalizada a [0,1] respecto al máximo teórico para 8-bit (8 bits = 8.0 max entropy).
+    Mide la Entropía de Shannon (riqueza de textura e información) restringida AL TEJIDO.
+    Una imagen con buen nivel de detalle anatómico tendrá mayor entropía interna.
+    """
+    if tissue_mask is None or not np.any(tissue_mask):
+        return 0.0
+
+    tissue_pixels = img[tissue_mask].astype(np.uint8)
+    if tissue_pixels.size == 0:
+        return 0.0
+
+    hist, _ = np.histogram(tissue_pixels, bins=256, range=(0, 256))
+    hist = hist.astype(float)
+    total = hist.sum()
+    if total == 0:
+        return 0.0
+    hist /= total
+
+    nonzero = hist[hist > 0]
+    entropy = float(-np.sum(nonzero * np.log2(nonzero)))
+    # Normalizado respecto al máximo de 8 bits = 8.0
+    return float(np.clip(entropy / 7.5, 0.0, 1.0))
+
+
+def compute_contrast_preservation_score(img: np.ndarray, orig_img: np.ndarray, tissue_mask: np.ndarray) -> float:
+    """
+    Penaliza si el contraste interno del tejido se redujo o aplanó (imagen lavada/grisácea).
+    Compara la desviación estándar interna de la imagen procesada vs la original.
+    """
+    if orig_img is None or tissue_mask is None or not np.any(tissue_mask):
+        return 1.0
+
+    orig_std = float(np.std(orig_img[tissue_mask]))
+    proc_std = float(np.std(img[tissue_mask]))
+
+    if orig_std < 1e-5:
+        return 1.0
+
+    std_ratio = proc_std / orig_std
+    # Si la desviación estándar cayó a menos del 80% de la original, la imagen se lavó (perdió contraste)
+    if std_ratio < 0.8:
+        return float(np.clip(std_ratio / 0.8, 0.2, 1.0))
+    elif std_ratio > 2.5:
+        # Demasiado ruido o artefacto extremo
+        return 0.7
+    else:
+        return 1.0
+
+
+def compute_composite_quality_score(img: np.ndarray, orig_img: np.ndarray = None) -> float:
+    """
+    Puntuación compuesta de precisión clínica para imágenes cerebrales DICOM.
+    
+    Estructura de Evaluación:
+      1. Segmentación interna del Tejido (ROI) vs Fondo (Aire).
+      2. Medición dentro de la ROI:
+         - CNR (Contraste entre tejidos): 35%
+         - Nitidez Tenengrad (Detalle de bordes): 35%
+         - Entropía (Riqueza de información): 20%
+         - Fidelidad de Contraste (Evita imagen lavada): 10%
+      3. Multiplicación por Penalización de Fondo (Si el aire se volvió gris, arruina la nota).
     """
     if img is None or img.size == 0:
         return 0.0
-    
-    img_uint8 = img.astype(np.uint8)
-    hist, _ = np.histogram(img_uint8.ravel(), bins=256, range=(0, 256))
-    hist = hist.astype(float)
-    hist /= (hist.sum() + 1e-10)
-    
-    # Entropía de Shannon
-    nonzero = hist[hist > 0]
-    entropy = float(-np.sum(nonzero * np.log2(nonzero)))
-    
-    # Máximo teórico 8 bits = 8.0
-    return float(np.clip(entropy / 8.0, 0.0, 1.0))
 
+    tissue_mask, bg_mask = _get_tissue_and_bg_masks(img)
 
-def compute_composite_quality_score(img: np.ndarray) -> float:
-    """
-    Puntuación compuesta de calidad médica para imágenes cerebrales DICOM.
-    
-    Pesos calibrados para imagen médica real:
-      - CNR      35%: Diferenciación de tejidos (MÁS IMPORTANTE)
-      - Nitidez  30%: Preservación de bordes anatómicos (penaliza borroneo)
-      - Entropía 25%: Contenido de información (penaliza pérdida de detalle)
-      - SNR      10%: Señal/Ruido (poco peso — el suavizado lo infla artificialmente)
-    
-    Todos los componentes están en [0,1] para una puntuación final en [0,1].
-    """
-    cnr       = compute_cnr(img)
-    sharpness = compute_sharpness_tenengrad(img)
-    entropy   = compute_entropy(img)
-    snr       = compute_snr(img)
-    
-    score = (0.35 * cnr) + (0.30 * sharpness) + (0.25 * entropy) + (0.10 * snr)
-    return float(np.clip(score, 0.0, 1.0))
+    cnr = compute_roi_cnr(img, tissue_mask)
+    sharpness = compute_roi_sharpness_tenengrad(img, tissue_mask)
+    entropy = compute_roi_entropy(img, tissue_mask)
+
+    contrast_preservation = 1.0
+    if orig_img is not None:
+        contrast_preservation = compute_contrast_preservation_score(img, orig_img, tissue_mask)
+
+    bg_penalty = compute_background_purity_penalty(img, bg_mask)
+
+    base_score = (0.35 * cnr) + (0.35 * sharpness) + (0.20 * entropy) + (0.10 * contrast_preservation)
+    final_score = base_score * bg_penalty
+
+    return float(np.clip(final_score, 0.0, 1.0))
