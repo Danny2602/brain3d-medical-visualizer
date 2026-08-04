@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useIaQuality } from './hooks/useIaQuality';
 import {
   Sparkles, UploadCloud, FileText, RefreshCw, CheckCircle2,
-  Zap, Layers, ArrowRight, AlertCircle, Eye, Brain
+  Zap, Layers, ArrowRight, AlertCircle, Eye, Brain, Filter, Info
 } from 'lucide-react';
 
 export default function IAQuality() {
@@ -16,6 +16,13 @@ export default function IAQuality() {
 
   const activeNode = (selectedNodeIndex !== null && result?.nodos?.[selectedNodeIndex])
     ? result.nodos[selectedNodeIndex] : null;
+
+  // Helper para nombres legibles de filtros
+  const formatFilterName = (name) => {
+    if (!name) return '';
+    const clean = name.replace('_filter', '').replace(/_/g, ' ');
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  };
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6 text-slate-100">
@@ -33,7 +40,7 @@ export default function IAQuality() {
               Acondicionamiento de Imagen Cerebral con IA
             </h1>
             <p className="text-sm text-slate-400 mt-0.5">
-              La IA explora automáticamente tus filtros DICOM y aplica la mejor combinación para realzar la imagen cerebral.
+              Optuna explora dinámicamente el árbol de filtros DICOM en busca de la combinación óptima de mejora.
             </p>
           </div>
           {selectedFile && (
@@ -94,12 +101,12 @@ export default function IAQuality() {
           {/* AI Info Banner */}
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-2 text-xs text-slate-400">
             <p className="font-semibold text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> ¿Cómo funciona la IA?
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Árbol de Exploración Optuna
             </p>
             <ul className="space-y-1 list-disc list-inside text-slate-500">
-              <li>Explora 20 combinaciones de filtros automáticamente.</li>
-              <li>Mide calidad con métricas médicas (SNR, CNR, Nitidez).</li>
-              <li>Aprende y reutiliza la mejor receta para el mismo estudio.</li>
+              <li>Construye pipelines de 4 etapas especializadas.</li>
+              <li>Calcula CNR, Nitidez y Entropía en tejido cerebral.</li>
+              <li>Aplica mezcla suave para proteger el fondo negro.</li>
             </ul>
           </div>
 
@@ -113,7 +120,7 @@ export default function IAQuality() {
                 : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-[0.98]'
             }`}>
             {loading ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" />IA Explorando Mejores Filtros...</>
+              <><RefreshCw className="w-4 h-4 animate-spin" />IA Explorando Árbol de Filtros...</>
             ) : (
               <><Zap className="w-4 h-4 fill-current" />Optimizar Imagen con IA</>
             )}
@@ -157,16 +164,51 @@ export default function IAQuality() {
                     <Layers className="w-4 h-4 text-cyan-400" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Filtros</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Filtros Usados</p>
                     <p className="text-lg font-black text-cyan-400">{result.optimal_flow?.length || 0}</p>
                   </div>
                 </div>
               </div>
 
+              {/* Filtros Seleccionados (Lista visible explícita de nombres) */}
+              {result.optimal_flow?.length > 0 && (
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-emerald-400" /> Receta de Filtros Aplicada por la IA
+                    </h3>
+                    <span className="text-[10px] text-slate-500">Secuencia de 4 Etapas</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+                    {result.optimal_flow.map((step, idx) => (
+                      <div key={step.id || idx}
+                        onClick={() => setSelectedNodeIndex(idx)}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                          selectedNodeIndex === idx
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-300 shadow-md'
+                            : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Etapa {idx + 1}</span>
+                          <span className="w-2 h-2 rounded-full bg-emerald-400/80"></span>
+                        </div>
+                        <p className="text-xs font-bold text-slate-100">{formatFilterName(step.filter_name)}</p>
+                        {step.params && Object.keys(step.params).length > 0 && (
+                          <p className="text-[10px] text-slate-500 mt-1 truncate">
+                            {Object.entries(step.params).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Image Comparison */}
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
                 <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-emerald-400" /> Resultado de Acondicionamiento
+                  <Eye className="w-4 h-4 text-emerald-400" /> Comparativa Visual
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -177,7 +219,7 @@ export default function IAQuality() {
                   </div>
                   <div className="space-y-1.5">
                     <p className="text-[11px] font-semibold text-emerald-500 uppercase tracking-wider">
-                      {activeNode ? `Nodo: ${activeNode.filtro}` : 'Mejorada por IA'}
+                      {activeNode ? `Nodo: ${formatFilterName(activeNode.filtro)}` : 'Mejorada por IA (Pipeline Completo)'}
                     </p>
                     <div className="aspect-square bg-black border border-emerald-500/30 rounded-xl overflow-hidden flex items-center justify-center relative">
                       <img
@@ -195,14 +237,14 @@ export default function IAQuality() {
                 </div>
               </div>
 
-              {/* Pipeline Steps */}
+              {/* Pipeline Step Selector */}
               {result.optimal_flow?.length > 0 && (
                 <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-cyan-400" /> Pipeline Generado por la IA
+                      <Layers className="w-4 h-4 text-cyan-400" /> Inspección por Etapa
                     </h3>
-                    <span className="text-[10px] text-slate-500">Clic para inspeccionar cada paso</span>
+                    <span className="text-[10px] text-slate-500">Selecciona una etapa para ver la vista previa intermedia</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button onClick={() => setSelectedNodeIndex(null)}
@@ -211,7 +253,7 @@ export default function IAQuality() {
                           ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
                           : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                       }`}>
-                      Final
+                      Resultado Final
                     </button>
                     {result.optimal_flow.map((step, idx) => (
                       <React.Fragment key={step.id || idx}>
@@ -222,8 +264,8 @@ export default function IAQuality() {
                               ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300'
                               : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                           }`}>
-                          <span className="text-[9px] text-slate-600 block">Paso {idx + 1}</span>
-                          {step.filter_name.replace('_filter', '')}
+                          <span className="text-[9px] text-slate-600 block">Etapa {idx + 1}</span>
+                          {formatFilterName(step.filter_name)}
                         </button>
                       </React.Fragment>
                     ))}
