@@ -10,11 +10,9 @@ def _get_tissue_and_bg_masks(img: np.ndarray):
     if range_val < 1e-5:
         return np.ones_like(img, dtype=bool), np.zeros_like(img, dtype=bool)
 
-    # El fondo es la zona de aire/escáner vacía (< 8% del rango de intensidad)
     bg_threshold = min_val + 0.08 * range_val
     bg_mask = img <= bg_threshold
 
-    # El tejido anatómico útil es la zona por encima del umbral de fondo (> 12% del rango)
     tissue_threshold = min_val + 0.12 * range_val
     tissue_mask = img >= tissue_threshold
 
