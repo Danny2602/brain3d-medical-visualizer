@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { segmentacion } from '../apis/segmentacion';
-
+//Segmentacion hook para evitar errores 
 export const useSegmentacionPng = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
