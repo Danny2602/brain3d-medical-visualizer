@@ -1,6 +1,14 @@
 """
 Motor de optimización por árbol de exploración (Optuna v6):
 Explora combinaciones dinámicas de 3 a 5 filtros en cascada sobre el registro completo de filtros DICOM.
+
+En espera de mejor optimizacion y utilizzar otro que no es cascada sino otros metodos como son:
+-PSO
+- algoritmo genetico
+- optimizacion bayesiana
+- simulacion de recocido
+
+- actualmente (cascada)
 """
 
 import numpy as np
