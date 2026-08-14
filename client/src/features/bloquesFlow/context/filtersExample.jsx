@@ -1,4 +1,4 @@
-//Filtros par imagens png
+//Filtros par imagens png, pjpg
 export const FILTER_TYPES = {
     noise: {
         label: 'Reducción de Ruido',
