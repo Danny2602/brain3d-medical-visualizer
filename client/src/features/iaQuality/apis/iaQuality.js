@@ -11,7 +11,7 @@ export const iaQualityApi = {
       const formData = new FormData();
       formData.append("image", imageFile);
 
-      const response = await api.post("/ai/dicom/auto-enhance", formData, {
+      const response = await api.post("ai/dicom/auto-enhance", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data;
@@ -24,7 +24,7 @@ export const iaQualityApi = {
   /** Obtiene las estrategias radiológicas predeterminadas. */
   getPresets: async () => {
     try {
-      const response = await api.get("/ai/dicom/presets");
+      const response = await api.get("ai/dicom/presets");
       return response.data;
     } catch (error) {
       console.error("Error al obtener presets:", error);

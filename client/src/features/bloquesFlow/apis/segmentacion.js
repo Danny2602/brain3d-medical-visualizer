@@ -12,7 +12,7 @@ export const segmentacion = {
             formData.append('image', image);
             formData.append('flow_config_json', JSON.stringify(flowConfig));
 
-            const response = await api.post('/process-image-nodos', formData, {
+            const response = await api.post('process-image-nodos', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -29,7 +29,7 @@ export const segmentacion = {
             formData.append('image', image);
             formData.append('flow_config_json', JSON.stringify(flowConfig));
 
-            const response = await api.post('/process-dicom-nodos', formData, {
+            const response = await api.post('process-dicom-nodos', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -45,7 +45,7 @@ export const segmentacion = {
             const formData = new FormData();
             formData.append('image', image);
 
-            const response = await api.post('/preview-dicom', formData, {
+            const response = await api.post('preview-dicom', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

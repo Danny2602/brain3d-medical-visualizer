@@ -4,7 +4,7 @@ import { Loader2, ZoomIn, Layers, Image as ImageIcon } from 'lucide-react';
 
 
 export default function FilterNode({ id, data }) {
-    const isClipping = data.filterName === 'mask_clipping';
+    const isClipping = data.filterName === 'mask_clipping' || data.filterName === 'mask_clipping_filter';
     const isLogic = data.filterName.startsWith('logic_');
     const isOperator = isClipping || isLogic;
 
@@ -24,7 +24,7 @@ export default function FilterNode({ id, data }) {
         <div className={`bg-slate-900 border-2 rounded-xl shadow-2xl min-w-[200px] transition-all relative ${data.resultUrl ? 'border-indigo-500' : 'border-slate-700'}`}>
 
             {/* ENTRADAS (HANDLES) */}
-            {isOperator && data.filterName !== 'invert_not' ? (
+            {isOperator && data.filterName !== 'invert_not' && data.filterName !== 'invert_not_filter' ? (
                 <>
                     {/* Etiquetas dinámicas sobre los conectores */}
                     <div className="absolute -top-6 left-0 right-0 flex justify-around text-[7px] font-black uppercase tracking-widest text-slate-500 pointer-events-none">
